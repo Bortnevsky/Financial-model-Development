@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — Волна перераспределения</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Wave Animation Styles */
+        .wave-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .wave-table th {
+            padding: 12px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--bg-input);
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+        .wave-table td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            font-size: 13px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .wave-table .row-header {
+            text-align: left;
+            font-weight: 500;
+            background: var(--bg-input);
+            width: 120px;
+        }
+        .wave-table .row-calc {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .wave-table .row-plan td {
+            font-weight: 500;
+        }
+        .wave-table .row-delta td {
+            font-size: 11px;
+        }
+
+        /* Cell States */
+        .cell-locked {
+            background: rgba(139, 148, 158, 0.1);
+            color: var(--text-muted);
+        }
+        .cell-locked::before {
+            content: "🔒";
+            font-size: 8px;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+        }
+
+        .cell-editable {
+            background: var(--bg-dark);
+            cursor: pointer;
+        }
+        .cell-editable:hover {
+            background: rgba(88, 166, 255, 0.1);
+            box-shadow: inset 0 0 0 2px var(--accent);
+        }
+
+        .cell-override {
+            background: rgba(210, 153, 34, 0.15) !important;
+            box-shadow: inset 0 0 0 2px var(--warning);
+        }
+        .cell-override::after {
+            content: "✎";
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 10px;
+            color: var(--warning);
+        }
+
+        .cell-wave {
+            position: relative;
+            overflow: hidden;
+        }
+        .cell-wave::before {
+            content: "↻";
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        /* Wave Animation */
+        @keyframes waveRipple {
+            0% {
+                background: rgba(88, 166, 255, 0.4);
+                transform: scale(1.05);
+            }
+            100% {
+                background: rgba(88, 166, 255, 0.1);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes wavePulse {
+            0% { box-shadow: inset 0 0 0 3px var(--accent); }
+            50% { box-shadow: inset 0 0 0 3px transparent; }
+            100% { box-shadow: inset 0 0 0 2px rgba(88, 166, 255, 0.3); }
+        }
+
+        @keyframes numberChange {
+            0% {
+                transform: translateY(-10px);
+                opacity: 0;
+                color: var(--accent);
+            }
+            50% {
+                color: var(--accent);
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+                color: var(--text);
+            }
+        }
+
+        @keyframes deltaFlash {
+            0% {
+                background: rgba(248, 81, 73, 0.4);
+                transform: scale(1.1);
+            }
+            100% {
+                background: transparent;
+                transform: scale(1);
+            }
+        }
+
+        .cell-animating {
+            animation: waveRipple 0.5s ease-out forwards, wavePulse 0.8s ease-out;
+        }
+
+        .cell-animating .cell-value {
+            animation: numberChange 0.5s ease-out forwards;
+        }
+
+        .delta-animating {
+            animation: deltaFlash 0.5s ease-out forwards;
+        }
+
+        .cell-value {
+            display: block;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cell-delta {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+        .cell-delta.positive { color: var(--success); }
+        .cell-delta.negative { color: var(--error); }
+
+        /* Input in cell */
+        .cell-input {
+            width: 100%;
+            padding: 6px;
+            background: var(--bg-dark);
+            border: 2px solid var(--accent);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+        }
+
+        /* Total column */
+        .col-total {
+            background: var(--bg-input) !important;
+            font-weight: 600 !important;
+            min-width: 100px;
+        }
+        .col-total.mismatch {
+            color: var(--error) !important;
+        }
+        .col-total.match {
+            color: var(--success) !important;
+        }
+
+        /* Wave Modal */
+        .wave-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 1001;
+        }
+        .wave-modal.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .wave-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .wave-modal-body {
+            padding: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .wave-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Algorithm selector */
+        .algo-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .algo-option {
+            padding: 16px;
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .algo-option:hover {
+            border-color: var(--accent);
+        }
+        .algo-option.selected {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.1);
+        }
+        .algo-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .algo-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Preview chart */
+        .wave-preview {
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        .wave-preview-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .wave-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 80px;
+        }
+        .wave-bar {
+            flex: 1;
+            background: var(--accent);
+            border-radius: 2px 2px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .wave-bar.changed {
+            background: var(--warning);
+        }
+        .wave-bar.source {
+            background: var(--success);
+        }
+        .wave-bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* Delta indicator */
+        .delta-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(210, 153, 34, 0.15);
+            border: 1px solid var(--warning);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .delta-indicator.balanced {
+            background: rgba(63, 185, 80, 0.15);
+            border-color: var(--success);
+        }
+        .delta-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .delta-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 1000;
+        }
+        .overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+            <nav class="nav-section">
+                <div class="nav-title">Касаткина 7</div>
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <div class="nav-item active">Продажи — План</div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <header class="header">
+                <div class="header-left">
+                    <h1 style="font-size: 18px; font-weight: 600;">Продажи — Распределение по периодам</h1>
+                    <span class="tag tag-blue">Квартиры</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost" onclick="resetAll()">Сбросить</button>
+                    <button class="btn btn-primary">Сохранить</button>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- Instructions -->
+                <div class="ai-hint" style="margin-bottom: 24px;">
+                    <div class="ai-icon">💡</div>
+                    <div class="ai-content">
+                        <div class="ai-title">Кликните на ячейку плана, чтобы изменить</div>
+                        <div class="ai-text">
+                            После изменения система предложит перераспределить дельту волной на оставшиеся периоды, сохранив ИТОГО неизменным.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="summary-card">
+                        <div class="summary-label">ИТОГО план</div>
+                        <div class="summary-value" id="total-plan">91 000</div>
+                        <div class="summary-sub">м²</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Ср. темп</div>
+                        <div class="summary-value">2 528</div>
+                        <div class="summary-sub">м²/мес</div>
+                    </div>
+                    <div class="summary-card" id="delta-card" style="display: none;">
+                        <div class="summary-label">Дельта</div>
+                        <div class="summary-value" id="delta-display" style="color: var(--warning);">+0</div>
+                        <div class="summary-sub">к распределению</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Статус</div>
+                        <div class="summary-value" id="status-display" style="color: var(--success); font-size: 18px;">Сбалансировано</div>
+                    </div>
+                </div>
+
+                <!-- Wave Table -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div class="form-title">Помесячный план продаж</div>
+                        <div style="display: flex; gap: 12px; font-size: 12px; color: var(--text-muted);">
+                            <span>🔒 Факт/закрыто</span>
+                            <span>✎ Ручное</span>
+                            <span>↻ Волна</span>
+                        </div>
+                    </div>
+                    <div class="form-body" style="padding: 0; overflow-x: auto;">
+                        <table class="wave-table" id="wave-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;"></th>
+                                    <th>Янв</th>
+                                    <th>Фев</th>
+                                    <th>Мар</th>
+                                    <th>Апр</th>
+                                    <th>Май</th>
+                                    <th>Июн</th>
+                                    <th>Июл</th>
+                                    <th>Авг</th>
+                                    <th>Сен</th>
+                                    <th>Окт</th>
+                                    <th>Ноя</th>
+                                    <th>Дек</th>
+                                    <th style="width: 100px;">ИТОГО</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div style="display: flex; gap: 24px; margin-top: 16px; font-size: 12px; color: var(--text-muted);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 24px; height: 24px; background: rgba(139, 148, 158, 0.2); border-radius: 4px;"></div>
+                        Факт (закрыто)
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 24px; height: 24px; background: rgba(210, 153, 34, 0.2); border: 2px solid var(--warning); border-radius: 4px;"></div>
+                        Ручная правка
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 24px; height: 24px; background: rgba(88, 166, 255, 0.2); border-radius: 4px;"></div>
+                        Пересчитано волной
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+
+    <!-- Wave Modal -->
+    <div class="wave-modal" id="wave-modal">
+        <div class="wave-modal-header">
+            <h3 style="font-size: 16px; font-weight: 600;">Перераспределение дельты</h3>
+            <button class="btn-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="wave-modal-body">
+            <!-- Delta Indicator -->
+            <div class="delta-indicator" id="modal-delta">
+                <div>
+                    <div class="delta-value" id="modal-delta-value">+800</div>
+                    <div class="delta-label">м² к распределению</div>
+                </div>
+            </div>
+
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+                Изменение в <strong id="modal-month">апреле</strong>:
+                <span id="modal-old">3 200</span> → <span id="modal-new" style="color: var(--warning); font-weight: 600;">4 000</span> м²
+            </p>
+
+            <div style="font-size: 13px; margin-bottom: 12px;">Как распределить?</div>
+
+            <div class="algo-options">
+                <div class="algo-option selected" data-algo="proportional" onclick="selectAlgo(this)">
+                    <div class="algo-name">📊 Пропорционально</div>
+                    <div class="algo-desc">По весу каждого периода</div>
+                </div>
+                <div class="algo-option" data-algo="uniform" onclick="selectAlgo(this)">
+                    <div class="algo-name">📏 Равномерно</div>
+                    <div class="algo-desc">Поровну на все периоды</div>
+                </div>
+                <div class="algo-option" data-algo="tail" onclick="selectAlgo(this)">
+                    <div class="algo-name">📍 В хвост</div>
+                    <div class="algo-desc">Всё на последний период</div>
+                </div>
+                <div class="algo-option" data-algo="scurve" onclick="selectAlgo(this)">
+                    <div class="algo-name">〰️ S-кривая</div>
+                    <div class="algo-desc">Больше в середину</div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="wave-preview">
+                <div class="wave-preview-title">Превью распределения</div>
+                <div class="wave-bars" id="preview-bars">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+        </div>
+        <div class="wave-modal-footer">
+            <button class="btn btn-ghost" onclick="applyNoWave()">Только эту ячейку</button>
+            <button class="btn btn-primary" onclick="applyWave()">
+                <span>Применить волну</span>
+                <span style="margin-left: 8px;">〰️</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const TOTAL_TARGET = 91000;
+        const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+
+        // Initial plan (S-curve distribution)
+        let calcValues = [2100, 2800, 3200, 3800, 4500, 5200, 5800, 6200, 6800, 7400, 8000, 8500]; // fake fact + plan
+        let planValues = [...calcValues];
+        let overrideValues = Array(12).fill(null);
+        let waveAffected = Array(12).fill(false);
+        let lockedPeriods = [0, 1, 2]; // Jan-Mar locked (fact)
+
+        // Normalize to target
+        const initialSum = calcValues.reduce((a, b) => a + b, 0);
+        calcValues = calcValues.map(v => Math.round(v * TOTAL_TARGET / initialSum));
+        planValues = [...calcValues];
+
+        // State
+        let editingCell = null;
+        let currentDelta = 0;
+        let selectedAlgo = 'proportional';
+
+        // Render table
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+
+            // Calc row
+            let calcRow = '<tr class="row-calc"><td class="row-header">Расчёт</td>';
+            calcValues.forEach((v, i) => {
+                calcRow += `<td>${v.toLocaleString('ru-RU')}</td>`;
+            });
+            calcRow += `<td class="col-total">${calcValues.reduce((a,b) => a+b, 0).toLocaleString('ru-RU')}</td></tr>`;
+
+            // Plan row
+            let planRow = '<tr class="row-plan"><td class="row-header">План</td>';
+            planValues.forEach((v, i) => {
+                const isLocked = lockedPeriods.includes(i);
+                const isOverride = overrideValues[i] !== null;
+                const isWave = waveAffected[i];
+
+                let cellClass = 'cell-editable';
+                if (isLocked) cellClass = 'cell-locked';
+                else if (isOverride) cellClass = 'cell-override';
+                else if (isWave) cellClass = 'cell-wave cell-editable';
+
+                planRow += `<td class="${cellClass}" data-month="${i}" onclick="cellClick(${i})">
+                    <span class="cell-value">${v.toLocaleString('ru-RU')}</span>
+                </td>`;
+            });
+
+            const planTotal = planValues.reduce((a, b) => a + b, 0);
+            const totalClass = planTotal === TOTAL_TARGET ? 'match' : 'mismatch';
+            planRow += `<td class="col-total ${totalClass}">${planTotal.toLocaleString('ru-RU')}</td></tr>`;
+
+            // Delta row
+            let deltaRow = '<tr class="row-delta"><td class="row-header" style="font-size: 11px; color: var(--text-muted);">Δ от расчёта</td>';
+            planValues.forEach((v, i) => {
+                const delta = v - calcValues[i];
+                let deltaClass = delta > 0 ? 'positive' : delta < 0 ? 'negative' : '';
+                let deltaText = delta === 0 ? '—' : (delta > 0 ? '+' : '') + delta.toLocaleString('ru-RU');
+                deltaRow += `<td class="cell-delta ${deltaClass}">${deltaText}</td>`;
+            });
+            const totalDelta = planTotal - TOTAL_TARGET;
+            deltaRow += `<td class="col-total cell-delta ${totalDelta !== 0 ? 'negative' : ''}">${totalDelta === 0 ? '✓' : totalDelta.toLocaleString('ru-RU')}</td></tr>`;
+
+            tbody.innerHTML = calcRow + planRow + deltaRow;
+
+            // Update summary
+            document.getElementById('total-plan').textContent = planTotal.toLocaleString('ru-RU');
+
+            const deltaCard = document.getElementById('delta-card');
+            const statusDisplay = document.getElementById('status-display');
+
+            if (totalDelta !== 0) {
+                deltaCard.style.display = 'block';
+                document.getElementById('delta-display').textContent = (totalDelta > 0 ? '+' : '') + totalDelta.toLocaleString('ru-RU');
+                statusDisplay.textContent = 'Дисбаланс!';
+                statusDisplay.style.color = 'var(--error)';
+            } else {
+                deltaCard.style.display = 'none';
+                statusDisplay.textContent = 'Сбалансировано';
+                statusDisplay.style.color = 'var(--success)';
+            }
+        }
+
+        // Cell click
+        function cellClick(monthIndex) {
+            if (lockedPeriods.includes(monthIndex)) return;
+
+            const cell = document.querySelector(`td[data-month="${monthIndex}"]`);
+            const currentValue = planValues[monthIndex];
+
+            cell.innerHTML = `<input type="text" class="cell-input" value="${currentValue}"
+                onblur="cellBlur(${monthIndex}, this)"
+                onkeydown="cellKeydown(event, ${monthIndex}, this)" autofocus>`;
+            cell.querySelector('input').select();
+            editingCell = monthIndex;
+        }
+
+        function cellKeydown(e, monthIndex, input) {
+            if (e.key === 'Enter') {
+                cellBlur(monthIndex, input);
+            } else if (e.key === 'Escape') {
+                renderTable();
+            }
+        }
+
+        function cellBlur(monthIndex, input) {
+            const newValue = parseInt(input.value.replace(/\s/g, '')) || 0;
+            const oldValue = calcValues[monthIndex];
+
+            if (newValue !== planValues[monthIndex]) {
+                currentDelta = newValue - oldValue;
+                overrideValues[monthIndex] = newValue;
+                planValues[monthIndex] = newValue;
+
+                // Show modal
+                openModal(monthIndex, oldValue, newValue);
+            } else {
+                renderTable();
+            }
+        }
+
+        // Modal
+        function openModal(monthIndex, oldVal, newVal) {
+            renderTable(); // Update table first
+
+            const delta = -(newVal - oldVal); // Negative because we need to reduce others
+            document.getElementById('modal-delta-value').textContent = (delta > 0 ? '+' : '') + Math.abs(newVal - oldVal).toLocaleString('ru-RU');
+            document.getElementById('modal-month').textContent = months[monthIndex].toLowerCase();
+            document.getElementById('modal-old').textContent = oldVal.toLocaleString('ru-RU');
+            document.getElementById('modal-new').textContent = newVal.toLocaleString('ru-RU');
+
+            currentDelta = delta;
+            editingCell = monthIndex;
+
+            updatePreview();
+
+            document.getElementById('overlay').classList.add('open');
+            document.getElementById('wave-modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('overlay').classList.remove('open');
+            document.getElementById('wave-modal').classList.remove('open');
+        }
+
+        function selectAlgo(el) {
+            document.querySelectorAll('.algo-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedAlgo = el.dataset.algo;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const bars = document.getElementById('preview-bars');
+            const affectedIndices = getAffectedIndices();
+            const distribution = calculateDistribution(affectedIndices, -currentDelta, selectedAlgo);
+
+            let html = '';
+            const maxVal = Math.max(...planValues);
+
+            planValues.forEach((v, i) => {
+                const isLocked = lockedPeriods.includes(i);
+                const isSource = i === editingCell;
+                const adjustment = distribution[i] || 0;
+                const newVal = isSource ? v : v + adjustment;
+                const height = (newVal / maxVal) * 100;
+
+                let barClass = '';
+                if (isSource) barClass = 'source';
+                else if (adjustment !== 0) barClass = 'changed';
+
+                html += `<div class="wave-bar ${barClass}" style="height: ${height}%">
+                    <span class="wave-bar-label">${months[i]}</span>
+                </div>`;
+            });
+
+            bars.innerHTML = html;
+        }
+
+        function getAffectedIndices() {
+            return planValues.map((_, i) => i).filter(i => !lockedPeriods.includes(i) && i !== editingCell);
+        }
+
+        function calculateDistribution(indices, delta, algo) {
+            const result = {};
+
+            if (indices.length === 0) return result;
+
+            const remaining = indices.map(i => planValues[i]);
+            const total = remaining.reduce((a, b) => a + b, 0);
+
+            switch (algo) {
+                case 'proportional':
+                    indices.forEach((idx, i) => {
+                        result[idx] = Math.round(delta * (remaining[i] / total));
+                    });
+                    break;
+
+                case 'uniform':
+                    const perPeriod = Math.round(delta / indices.length);
+                    indices.forEach(idx => {
+                        result[idx] = perPeriod;
+                    });
+                    break;
+
+                case 'tail':
+                    result[indices[indices.length - 1]] = delta;
+                    break;
+
+                case 'scurve':
+                    const mid = Math.floor(indices.length / 2);
+                    indices.forEach((idx, i) => {
+                        const weight = 1 - Math.abs(i - mid) / mid;
+                        result[idx] = Math.round(delta * weight / indices.length * 1.5);
+                    });
+                    break;
+            }
+
+            // Adjust rounding errors
+            const distributed = Object.values(result).reduce((a, b) => a + b, 0);
+            if (distributed !== delta && indices.length > 0) {
+                result[indices[indices.length - 1]] += delta - distributed;
+            }
+
+            return result;
+        }
+
+        // Apply wave with animation
+        function applyWave() {
+            closeModal();
+
+            const affectedIndices = getAffectedIndices();
+            const distribution = calculateDistribution(affectedIndices, -currentDelta, selectedAlgo);
+
+            // Reset wave flags
+            waveAffected = Array(12).fill(false);
+
+            // Animate wave
+            let delay = 0;
+            const cells = document.querySelectorAll('.row-plan td[data-month]');
+
+            affectedIndices.forEach((idx, i) => {
+                setTimeout(() => {
+                    const adjustment = distribution[idx];
+                    planValues[idx] = calcValues[idx] + (overrideValues[idx] ? overrideValues[idx] - calcValues[idx] : 0) + adjustment;
+                    waveAffected[idx] = true;
+
+                    // Animate cell
+                    const cell = cells[idx];
+                    cell.classList.add('cell-animating');
+                    cell.innerHTML = `<span class="cell-value">${planValues[idx].toLocaleString('ru-RU')}</span>`;
+
+                    // Update delta row
+                    const deltaCell = document.querySelectorAll('.row-delta td')[idx + 1];
+                    const delta = planValues[idx] - calcValues[idx];
+                    deltaCell.textContent = delta === 0 ? '—' : (delta > 0 ? '+' : '') + delta.toLocaleString('ru-RU');
+                    deltaCell.className = 'cell-delta ' + (delta > 0 ? 'positive' : delta < 0 ? 'negative' : '');
+                    deltaCell.classList.add('delta-animating');
+
+                    // Update total
+                    const planTotal = planValues.reduce((a, b) => a + b, 0);
+                    const totalCell = document.querySelector('.row-plan .col-total');
+                    totalCell.textContent = planTotal.toLocaleString('ru-RU');
+                    totalCell.className = 'col-total ' + (planTotal === TOTAL_TARGET ? 'match' : 'mismatch');
+
+                    // Update summary
+                    document.getElementById('total-plan').textContent = planTotal.toLocaleString('ru-RU');
+
+                    // Check balance
+                    if (planTotal === TOTAL_TARGET) {
+                        document.getElementById('delta-card').style.display = 'none';
+                        document.getElementById('status-display').textContent = 'Сбалансировано';
+                        document.getElementById('status-display').style.color = 'var(--success)';
+                    }
+
+                    // Remove animation class after
+                    setTimeout(() => {
+                        cell.classList.remove('cell-animating');
+                        cell.classList.add('cell-wave');
+                        deltaCell.classList.remove('delta-animating');
+                    }, 600);
+
+                }, delay);
+
+                delay += 80; // Wave delay between cells
+            });
+
+            // Final render after animation
+            setTimeout(() => {
+                renderTable();
+            }, delay + 800);
+        }
+
+        function applyNoWave() {
+            closeModal();
+            waveAffected = Array(12).fill(false);
+            renderTable();
+        }
+
+        function resetAll() {
+            planValues = [...calcValues];
+            overrideValues = Array(12).fill(null);
+            waveAffected = Array(12).fill(false);
+            renderTable();
+        }
+
+        // Init
+        renderTable();
+    </script>
+</body>
+</html>
