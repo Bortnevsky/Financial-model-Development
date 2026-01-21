@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — AI Ассистент — Касаткина 7</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-layout {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            max-width: 800px;
+        }
+        .message.user {
+            flex-direction: row-reverse;
+            margin-left: auto;
+        }
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, var(--purple), var(--accent));
+            color: #fff;
+        }
+        .message.user .message-avatar {
+            background: var(--bg-input);
+            color: var(--text-muted);
+        }
+        .message-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            max-width: 600px;
+        }
+        .message.user .message-content {
+            background: rgba(88, 166, 255, 0.15);
+            border-color: var(--accent);
+        }
+        .message-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .message-text p {
+            margin-bottom: 12px;
+        }
+        .message-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .inline-table {
+            margin: 16px 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .inline-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .inline-table th {
+            background: var(--bg-input);
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .inline-table td {
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+        }
+        .inline-table .positive { color: var(--success); }
+        .inline-table .negative { color: var(--error); }
+
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .action-btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .action-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .action-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .action-btn.primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .chat-input-area {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 14px;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+        }
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-4px); }
+        }
+
+        .quick-prompts {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .quick-prompt {
+            padding: 8px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-prompt:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Портфель</div>
+                <a href="projects.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                    Список проектов
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">Касаткина 7</div>
+                <a href="dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Dashboard
+                </a>
+                <a href="tep.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    Формы ввода
+                </a>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+                    AI Ассистент
+                </div>
+                <a href="scenarios.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                    Сценарии
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 style="font-size: 18px; font-weight: 600;">AI Ассистент</h1>
+                    <span class="tag tag-purple">Касаткина 7</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost">Очистить чат</button>
+                </div>
+            </header>
+
+            <!-- Chat -->
+            <div class="chat-layout">
+                <div class="chat-main">
+                    <div class="chat-messages">
+                        <!-- AI Welcome -->
+                        <div class="message ai">
+                            <div class="message-avatar">AI</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    <p>Привет! Я AI-ассистент по финансовому моделированию. Могу помочь с:</p>
+                                    <p>• Анализом текущей модели<br>
+                                    • Моделированием сценариев<br>
+                                    • Сравнением с бенчмарками<br>
+                                    • Поиском ошибок и аномалий</p>
+                                    <p>По проекту <strong>Касаткина 7</strong> вижу заполненную модель. Чем могу помочь?</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Question -->
+                        <div class="message user">
+                            <div class="message-avatar">МБ</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    Что если поднять цены на 15%?
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Response with Table -->
+                        <div class="message ai">
+                            <div class="message-avatar">AI</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    <p>Рассчитал сценарий <strong>"Цены +15%"</strong> с учётом эластичности спроса 0.5:</p>
+                                </div>
+
+                                <div class="inline-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Показатель</th>
+                                                <th>База</th>
+                                                <th>+15%</th>
+                                                <th>Δ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Цена кв., т.р./м²</td>
+                                                <td>719</td>
+                                                <td>827</td>
+                                                <td class="positive">+108</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Объём продаж, м²</td>
+                                                <td>91 000</td>
+                                                <td>84 175</td>
+                                                <td class="negative">−7.5%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Выручка кв., млрд</td>
+                                                <td>65.4</td>
+                                                <td>69.6</td>
+                                                <td class="positive">+4.2</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Выручка всего, млрд</td>
+                                                <td>73.5</td>
+                                                <td>77.7</td>
+                                                <td class="positive">+4.2</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Маржа, млрд</td>
+                                                <td>38.5</td>
+                                                <td>42.7</td>
+                                                <td class="positive">+4.2</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Маржа, %</td>
+                                                <td>52%</td>
+                                                <td>55%</td>
+                                                <td class="positive">+3 п.п.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="message-text">
+                                    <p>⚠️ <strong>Риск:</strong> При эластичности 0.5 объём продаж снизится на 7.5% (−6 825 м²). Это эквивалентно ~129 непроданным квартирам.</p>
+                                    <p>✅ <strong>Итог:</strong> Несмотря на снижение объёма, выручка вырастет на <strong>+5.7%</strong>, маржа на <strong>+11%</strong>.</p>
+                                </div>
+
+                                <div class="message-actions">
+                                    <button class="action-btn primary" onclick="location.href='scenarios.html'">Сохранить сценарий</button>
+                                    <button class="action-btn">Применить к модели</button>
+                                    <button class="action-btn">Другая эластичность</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Follow-up -->
+                        <div class="message user">
+                            <div class="message-avatar">МБ</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    А если эластичность 0.3?
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Typing -->
+                        <div class="message ai">
+                            <div class="message-avatar">AI</div>
+                            <div class="message-content">
+                                <div class="typing-indicator">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <textarea class="chat-input" placeholder="Спросите что-нибудь..." rows="1"></textarea>
+                            <button class="send-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                            </button>
+                        </div>
+                        <div class="quick-prompts">
+                            <button class="quick-prompt">Сравни с Мира</button>
+                            <button class="quick-prompt">Оптимизируй расходы</button>
+                            <button class="quick-prompt">Найди ошибки</button>
+                            <button class="quick-prompt">Экспорт в презентацию</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
