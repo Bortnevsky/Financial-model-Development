@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — Расходы — Касаткина 7</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Портфель</div>
+                <a href="projects.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                    Список проектов
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">Касаткина 7</div>
+                <a href="dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Dashboard
+                </a>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    Формы ввода
+                </div>
+                <a href="chat.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+                    AI Ассистент
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="breadcrumb">
+                        <a href="projects.html">Проекты</a>
+                        <span>/</span>
+                        <a href="dashboard.html">Касаткина 7</a>
+                        <span>/</span>
+                        <span>Расходы</span>
+                    </div>
+                    <span class="status status-warning">Черновик</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost">Сохранить</button>
+                    <a href="sales.html" class="btn btn-primary">
+                        Далее: Продажи
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Wizard Steps -->
+                <div class="wizard-steps">
+                    <a href="projects.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Создание
+                    </a>
+                    <a href="tep.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        ТЭП
+                    </a>
+                    <div class="step active">
+                        <span class="step-num">3</span>
+                        Расходы
+                    </div>
+                    <a href="sales.html" class="step">
+                        <span class="step-num">4</span>
+                        Продажи
+                    </a>
+                    <a href="dashboard.html" class="step">
+                        <span class="step-num">5</span>
+                        Итоги
+                    </a>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Себестоимость СМР</div>
+                        <div class="summary-value">24.4 млрд ₽</div>
+                        <div class="summary-sub">250 т.р./м² продав.</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Земля</div>
+                        <div class="summary-value">5.0 млрд ₽</div>
+                        <div class="summary-sub">вкл. аренду</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Коммерческие</div>
+                        <div class="summary-value">4.4 млрд ₽</div>
+                        <div class="summary-sub">6% от выручки</div>
+                    </div>
+                    <div class="summary-card" style="border-color: var(--warning);">
+                        <div class="summary-label">ИТОГО расходы</div>
+                        <div class="summary-value" style="color: var(--warning);">33.8 млрд ₽</div>
+                        <div class="summary-sub">346 т.р./м²</div>
+                    </div>
+                </div>
+
+                <!-- СМР -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Строительство (СМР)</div>
+                            <div class="form-subtitle">Себестоимость строительно-монтажных работ</div>
+                        </div>
+                        <span class="tag tag-yellow">Норматив</span>
+                    </div>
+
+                    <div class="form-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Себестоимость, т.р./м² <span class="required">*</span></label>
+                                <input type="text" class="form-input" value="250" id="smr-price" onchange="recalcSMR()" />
+                                <div class="quick-buttons">
+                                    <button class="quick-btn" onclick="setSMR(220)">220</button>
+                                    <button class="quick-btn selected" onclick="setSMR(250)">250</button>
+                                    <button class="quick-btn" onclick="setSMR(280)">280</button>
+                                    <button class="quick-btn" onclick="setSMR(300)">300</button>
+                                </div>
+                                <div class="form-hint">за продаваемый м²</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Продаваемая площадь</label>
+                                <input type="text" class="form-input" value="97 514" readonly style="background: var(--bg-dark); color: var(--text-muted);" />
+                                <div class="form-hint">из ТЭП</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ИТОГО СМР, млн ₽</label>
+                                <input type="text" class="form-input" value="24 379" id="smr-total" readonly style="background: var(--bg-dark); font-weight: 600;" />
+                                <div class="form-hint">= 97 514 × 250 т.р.</div>
+                            </div>
+                        </div>
+
+                        <div class="ai-hint" style="margin-top: 20px;">
+                            <div class="ai-icon">
+                                <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/></svg>
+                            </div>
+                            <div class="ai-content">
+                                <div class="ai-title">Бенчмарк СМР</div>
+                                <div class="ai-text">
+                                    Себестоимость 250 т.р./м² — в рынке для <strong>бизнес+ класса</strong> в Москве (монолит, отделка white box).<br>
+                                    Диапазон по аналогам: 230–280 т.р./м²
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Земля -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Земельный участок</div>
+                            <div class="form-subtitle">Стоимость приобретения и аренда</div>
+                        </div>
+                    </div>
+
+                    <div class="form-body">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 250px;">Показатель</th>
+                                    <th>Значение</th>
+                                    <th style="width: 120px;">Ед. изм.</th>
+                                    <th style="width: 150px;">Источник</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><div class="row-label">Стоимость ЗУ</div></td>
+                                    <td><input type="text" value="3 500" /></td>
+                                    <td>млн ₽</td>
+                                    <td><span class="tag tag-green">Ввод</span></td>
+                                </tr>
+                                <tr>
+                                    <td><div class="row-label">Аренда земли (ВРИ)</div></td>
+                                    <td><input type="text" value="320" /></td>
+                                    <td>млн ₽/год</td>
+                                    <td><span class="tag tag-purple">Расчёт ВРИ</span></td>
+                                </tr>
+                                <tr>
+                                    <td><div class="row-label">Срок строительства</div></td>
+                                    <td><input type="text" value="4" /></td>
+                                    <td>лет</td>
+                                    <td><span class="tag tag-green">Ввод</span></td>
+                                </tr>
+                                <tr>
+                                    <td><div class="row-label">Аренда за весь срок</div></td>
+                                    <td class="cell-calc" style="text-align: right; padding-right: 12px;">1 280</td>
+                                    <td>млн ₽</td>
+                                    <td><span class="tag tag-blue">= 320 × 4</span></td>
+                                </tr>
+                                <tr class="row-total">
+                                    <td><strong>ИТОГО земля</strong></td>
+                                    <td style="text-align: right; padding-right: 12px;"><strong>4 780</strong></td>
+                                    <td><strong>млн ₽</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Коммерческие -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Коммерческие расходы</div>
+                            <div class="form-subtitle">Маркетинг, продажи, брокеридж</div>
+                        </div>
+                    </div>
+
+                    <div class="form-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">% от выручки</label>
+                                <input type="text" class="form-input" value="6" id="comm-pct" onchange="recalcComm()" />
+                                <div class="quick-buttons">
+                                    <button class="quick-btn" onclick="setComm(4)">4%</button>
+                                    <button class="quick-btn" onclick="setComm(5)">5%</button>
+                                    <button class="quick-btn selected" onclick="setComm(6)">6%</button>
+                                    <button class="quick-btn" onclick="setComm(7)">7%</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Выручка (план)</label>
+                                <input type="text" class="form-input" value="73 500" readonly style="background: var(--bg-dark); color: var(--text-muted);" />
+                                <div class="form-hint">из раздела Продажи</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ИТОГО комм., млн ₽</label>
+                                <input type="text" class="form-input" value="4 410" id="comm-total" readonly style="background: var(--bg-dark); font-weight: 600;" />
+                                <div class="form-hint">= 73 500 × 6%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Прочие -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Прочие расходы</div>
+                            <div class="form-subtitle">Проектирование, техприсоединение, прочее</div>
+                        </div>
+                        <button class="btn btn-ghost" style="font-size: 12px;">+ Добавить статью</button>
+                    </div>
+
+                    <div class="form-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 250px;">Статья</th>
+                                    <th>Сумма, млн ₽</th>
+                                    <th style="width: 200px;">Расчёт</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><div class="row-label">Проектирование</div></td>
+                                    <td><input type="text" value="850" /></td>
+                                    <td class="cell-calc">~3.5% от СМР</td>
+                                </tr>
+                                <tr>
+                                    <td><div class="row-label">Техприсоединение</div></td>
+                                    <td><input type="text" value="420" /></td>
+                                    <td><span class="tag tag-green">Ввод</span></td>
+                                </tr>
+                                <tr>
+                                    <td><div class="row-label">Прочие</div></td>
+                                    <td><input type="text" value="200" /></td>
+                                    <td><span class="tag tag-green">Ввод</span></td>
+                                </tr>
+                                <tr class="row-total">
+                                    <td><strong>ИТОГО прочие</strong></td>
+                                    <td style="text-align: right; padding-right: 12px;"><strong>1 470</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Summary Table -->
+                <div class="form-card" style="border-color: var(--accent);">
+                    <div class="form-header" style="background: rgba(88, 166, 255, 0.1);">
+                        <div>
+                            <div class="form-title">Сводка по расходам</div>
+                        </div>
+                    </div>
+                    <div class="form-body" style="padding: 0;">
+                        <table class="data-table">
+                            <tbody>
+                                <tr>
+                                    <td style="width: 250px;">СМР</td>
+                                    <td style="text-align: right;">24 379</td>
+                                    <td style="width: 100px;">млн ₽</td>
+                                    <td style="width: 100px; color: var(--text-muted);">72%</td>
+                                </tr>
+                                <tr>
+                                    <td>Земля</td>
+                                    <td style="text-align: right;">4 780</td>
+                                    <td>млн ₽</td>
+                                    <td style="color: var(--text-muted);">14%</td>
+                                </tr>
+                                <tr>
+                                    <td>Коммерческие</td>
+                                    <td style="text-align: right;">4 410</td>
+                                    <td>млн ₽</td>
+                                    <td style="color: var(--text-muted);">13%</td>
+                                </tr>
+                                <tr>
+                                    <td>Прочие</td>
+                                    <td style="text-align: right;">1 470</td>
+                                    <td>млн ₽</td>
+                                    <td style="color: var(--text-muted);">4%</td>
+                                </tr>
+                                <tr class="row-total">
+                                    <td><strong>ВСЕГО РАСХОДЫ</strong></td>
+                                    <td style="text-align: right;"><strong>35 039</strong></td>
+                                    <td><strong>млн ₽</strong></td>
+                                    <td><strong>100%</strong></td>
+                                </tr>
+                                <tr style="background: rgba(63, 185, 80, 0.1);">
+                                    <td style="color: var(--success);">Расходы на м² продав.</td>
+                                    <td style="text-align: right; color: var(--success); font-weight: 600;">359</td>
+                                    <td style="color: var(--success);">т.р./м²</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="actions-bar">
+                <div class="actions-left">
+                    <a href="tep.html" class="btn btn-ghost">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        Назад: ТЭП
+                    </a>
+                </div>
+                <div class="actions-right">
+                    <button class="btn btn-ghost">Сохранить</button>
+                    <a href="sales.html" class="btn btn-primary">
+                        Далее: Продажи
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Quick buttons
+        document.querySelectorAll('.quick-buttons').forEach(group => {
+            group.querySelectorAll('.quick-btn').forEach(btn => {
+                if (!btn.onclick) {
+                    btn.addEventListener('click', () => {
+                        group.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                    });
+                }
+            });
+        });
+
+        function setSMR(val) {
+            document.getElementById('smr-price').value = val;
+            recalcSMR();
+            document.querySelectorAll('.quick-buttons')[0].querySelectorAll('.quick-btn').forEach(b => {
+                b.classList.toggle('selected', b.textContent == val);
+            });
+        }
+
+        function recalcSMR() {
+            const price = parseInt(document.getElementById('smr-price').value) || 0;
+            const total = Math.round(97514 * price / 1000);
+            document.getElementById('smr-total').value = total.toLocaleString('ru-RU');
+        }
+
+        function setComm(val) {
+            document.getElementById('comm-pct').value = val;
+            recalcComm();
+        }
+
+        function recalcComm() {
+            const pct = parseFloat(document.getElementById('comm-pct').value) || 0;
+            const total = Math.round(73500 * pct / 100);
+            document.getElementById('comm-total').value = total.toLocaleString('ru-RU');
+        }
+    </script>
+</body>
+</html>
