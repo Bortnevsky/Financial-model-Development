@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — Dashboard — Касаткина 7</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+        .kpi-card.highlight {
+            border-color: var(--success);
+            background: rgba(63, 185, 80, 0.05);
+        }
+        .kpi-card.warning {
+            border-color: var(--warning);
+        }
+        .kpi-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .kpi-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .kpi-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .kpi-badge.up {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--success);
+        }
+        .kpi-badge.down {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--error);
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .mini-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 60px;
+        }
+        .mini-bar {
+            flex: 1;
+            background: var(--accent);
+            border-radius: 2px 2px 0 0;
+            opacity: 0.7;
+        }
+        .mini-bar.negative {
+            background: var(--error);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        @media (max-width: 1200px) {
+            .kpi-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Портфель</div>
+                <a href="projects.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                    Список проектов
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">Касаткина 7</div>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Dashboard
+                </div>
+                <a href="tep.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    Формы ввода
+                </a>
+                <a href="chat.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+                    AI Ассистент
+                </a>
+                <a href="scenarios.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                    Сценарии
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 style="font-size: 18px; font-weight: 600;">Касаткина 7</h1>
+                    <span class="status status-success">Модель заполнена</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Экспорт
+                    </button>
+                    <a href="chat.html" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                        Спросить AI
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Wizard Steps (completed) -->
+                <div class="wizard-steps">
+                    <a href="projects.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Создание
+                    </a>
+                    <a href="tep.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        ТЭП
+                    </a>
+                    <a href="costs.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Расходы
+                    </a>
+                    <a href="sales.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Продажи
+                    </a>
+                    <div class="step active">
+                        <span class="step-num">✓</span>
+                        Итоги
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card highlight">
+                        <div class="kpi-label">Выручка</div>
+                        <div class="kpi-value" style="color: var(--success);">73.5</div>
+                        <div class="kpi-sub">млрд ₽</div>
+                        <span class="kpi-badge up">план</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Расходы</div>
+                        <div class="kpi-value">35.0</div>
+                        <div class="kpi-sub">млрд ₽</div>
+                    </div>
+                    <div class="kpi-card highlight">
+                        <div class="kpi-label">Маржа</div>
+                        <div class="kpi-value" style="color: var(--success);">38.5</div>
+                        <div class="kpi-sub">млрд ₽ (52%)</div>
+                        <span class="kpi-badge up">+52%</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Площадь продав.</div>
+                        <div class="kpi-value">97.5</div>
+                        <div class="kpi-sub">тыс. м²</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Цена средняя</div>
+                        <div class="kpi-value">754</div>
+                        <div class="kpi-sub">т.р./м²</div>
+                    </div>
+                </div>
+
+                <div class="two-col">
+                    <!-- Left Column -->
+                    <div>
+                        <!-- Revenue Breakdown -->
+                        <div class="form-card">
+                            <div class="form-header">
+                                <div class="form-title">Структура выручки</div>
+                            </div>
+                            <div class="form-body" style="padding: 0;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Вид ОН</th>
+                                            <th>Площадь</th>
+                                            <th>Цена</th>
+                                            <th>Выручка</th>
+                                            <th>Доля</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span style="color: var(--accent);">●</span> Квартиры</td>
+                                            <td>91 000 м²</td>
+                                            <td>719 т.р.</td>
+                                            <td style="font-weight: 600;">65.4 млрд</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 89%; background: var(--accent);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">89%</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><span style="color: var(--success);">●</span> Ритейл</td>
+                                            <td>6 514 м²</td>
+                                            <td>750 т.р.</td>
+                                            <td style="font-weight: 600;">4.9 млрд</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 7%; background: var(--success);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">7%</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><span style="color: var(--purple);">●</span> Паркинг</td>
+                                            <td>696 м.м.</td>
+                                            <td>4.5 млн</td>
+                                            <td style="font-weight: 600;">3.1 млрд</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 4%; background: var(--purple);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">4%</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Costs Breakdown -->
+                        <div class="form-card">
+                            <div class="form-header">
+                                <div class="form-title">Структура расходов</div>
+                            </div>
+                            <div class="form-body" style="padding: 0;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Статья</th>
+                                            <th>Сумма</th>
+                                            <th>На м²</th>
+                                            <th>Доля</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>СМР</td>
+                                            <td style="font-weight: 600;">24.4 млрд</td>
+                                            <td>250 т.р.</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 70%; background: var(--warning);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">70%</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Земля</td>
+                                            <td style="font-weight: 600;">4.8 млрд</td>
+                                            <td>49 т.р.</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 14%; background: var(--warning);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">14%</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Коммерческие</td>
+                                            <td style="font-weight: 600;">4.4 млрд</td>
+                                            <td>45 т.р.</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 12%; background: var(--warning);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">12%</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Прочие</td>
+                                            <td style="font-weight: 600;">1.5 млрд</td>
+                                            <td>15 т.р.</td>
+                                            <td>
+                                                <div class="progress-bar" style="width: 100px;">
+                                                    <div class="progress-fill" style="width: 4%; background: var(--warning);"></div>
+                                                </div>
+                                                <span style="font-size: 12px; color: var(--text-muted);">4%</span>
+                                            </td>
+                                        </tr>
+                                        <tr class="row-total">
+                                            <td><strong>ИТОГО</strong></td>
+                                            <td><strong>35.0 млрд</strong></td>
+                                            <td><strong>359 т.р.</strong></td>
+                                            <td><strong>100%</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <!-- Cash Flow Mini Chart -->
+                        <div class="form-card">
+                            <div class="form-header">
+                                <div class="form-title">Денежный поток (квартально)</div>
+                                <span class="tag tag-green">Положительный с Q3 2028</span>
+                            </div>
+                            <div class="form-body">
+                                <div class="mini-chart">
+                                    <div class="mini-bar negative" style="height: 80%;"></div>
+                                    <div class="mini-bar negative" style="height: 100%;"></div>
+                                    <div class="mini-bar negative" style="height: 90%;"></div>
+                                    <div class="mini-bar negative" style="height: 60%;"></div>
+                                    <div class="mini-bar negative" style="height: 30%;"></div>
+                                    <div class="mini-bar" style="height: 10%;"></div>
+                                    <div class="mini-bar" style="height: 35%;"></div>
+                                    <div class="mini-bar" style="height: 55%;"></div>
+                                    <div class="mini-bar" style="height: 70%;"></div>
+                                    <div class="mini-bar" style="height: 85%;"></div>
+                                    <div class="mini-bar" style="height: 95%;"></div>
+                                    <div class="mini-bar" style="height: 100%;"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                                    <span>Q1 2027</span>
+                                    <span>Q4 2029</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- P&L Summary -->
+                        <div class="form-card">
+                            <div class="form-header">
+                                <div class="form-title">P&L Сводка</div>
+                            </div>
+                            <div class="form-body" style="padding: 0;">
+                                <table class="data-table">
+                                    <tbody>
+                                        <tr>
+                                            <td>Выручка</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--success);">73 447</td>
+                                            <td style="width: 60px;">млн ₽</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Себестоимость</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--error);">−35 039</td>
+                                            <td>млн ₽</td>
+                                        </tr>
+                                        <tr style="background: rgba(63, 185, 80, 0.1);">
+                                            <td><strong>Валовая прибыль</strong></td>
+                                            <td style="text-align: right; font-weight: 700; color: var(--success);">38 408</td>
+                                            <td>млн ₽</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: var(--text-muted);">Маржа</td>
+                                            <td style="text-align: right; font-weight: 600;">52.3%</td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: var(--text-muted);">На м² продаваемый</td>
+                                            <td style="text-align: right; font-weight: 600;">394</td>
+                                            <td>т.р.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- AI Analysis -->
+                        <div class="form-card" style="border-color: var(--purple);">
+                            <div class="form-header" style="background: rgba(163, 113, 247, 0.1);">
+                                <div class="form-title" style="color: var(--purple);">🤖 AI Анализ</div>
+                            </div>
+                            <div class="form-body">
+                                <div style="font-size: 13px; line-height: 1.6; color: var(--text-muted);">
+                                    <p style="margin-bottom: 12px;">
+                                        <strong style="color: var(--success);">✓ Маржа 52%</strong> — выше среднего по рынку (45-50% для бизнес+)
+                                    </p>
+                                    <p style="margin-bottom: 12px;">
+                                        <strong style="color: var(--success);">✓ Себестоимость</strong> — 359 т.р./м² в рынке для монолита
+                                    </p>
+                                    <p style="margin-bottom: 12px;">
+                                        <strong style="color: var(--warning);">⚠ Паркинг</strong> — обеспеченность 0.41, возможно снижение спроса при низком спросе на м/м
+                                    </p>
+                                    <p>
+                                        <strong style="color: var(--text);">Рекомендация:</strong> Рассмотреть сценарий с ценой +10% и эластичностью 0.5
+                                    </p>
+                                </div>
+                                <a href="chat.html" class="btn btn-ghost" style="margin-top: 16px; width: 100%; justify-content: center;">
+                                    Обсудить с AI →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
