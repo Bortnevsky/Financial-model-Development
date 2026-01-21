@@ -543,6 +543,9 @@
         // Normalize to target
         const initialSum = calcValues.reduce((a, b) => a + b, 0);
         calcValues = calcValues.map(v => Math.round(v * TOTAL_TARGET / initialSum));
+        // Fix rounding error - adjust last element
+        const roundedSum = calcValues.reduce((a, b) => a + b, 0);
+        calcValues[calcValues.length - 1] += TOTAL_TARGET - roundedSum;
         planValues = [...calcValues];
 
         // State
