@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — Продажи — Касаткина 7</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Chart styles */
+        .chart-container {
+            background: var(--bg-input);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .chart-title {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 120px;
+            padding: 0 10px;
+        }
+        .chart-bar {
+            flex: 1;
+            background: var(--accent);
+            border-radius: 2px 2px 0 0;
+            min-width: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .chart-bar:hover {
+            background: var(--accent-hover);
+        }
+        .chart-bar.highlight {
+            background: var(--success);
+        }
+        .chart-labels {
+            display: flex;
+            gap: 4px;
+            padding: 8px 10px 0;
+        }
+        .chart-label {
+            flex: 1;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Distribution modal */
+        .distribution-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .dist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .dist-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .slider-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        input[type="range"] {
+            width: 150px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--bg-input);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider-value {
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Портфель</div>
+                <a href="projects.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                    Список проектов
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">Касаткина 7</div>
+                <a href="dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Dashboard
+                </a>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    Формы ввода
+                </div>
+                <a href="chat.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+                    AI Ассистент
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="breadcrumb">
+                        <a href="projects.html">Проекты</a>
+                        <span>/</span>
+                        <a href="dashboard.html">Касаткина 7</a>
+                        <span>/</span>
+                        <span>Продажи</span>
+                    </div>
+                    <span class="status status-warning">Черновик</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost">Сохранить</button>
+                    <a href="dashboard.html" class="btn btn-primary">
+                        Далее: Итоги
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Wizard Steps -->
+                <div class="wizard-steps">
+                    <a href="projects.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Создание
+                    </a>
+                    <a href="tep.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        ТЭП
+                    </a>
+                    <a href="costs.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Расходы
+                    </a>
+                    <div class="step active">
+                        <span class="step-num">4</span>
+                        Продажи
+                    </div>
+                    <a href="dashboard.html" class="step">
+                        <span class="step-num">5</span>
+                        Итоги
+                    </a>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Выручка квартиры</div>
+                        <div class="summary-value">65.5 млрд ₽</div>
+                        <div class="summary-sub">719 т.р./м²</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Выручка ритейл</div>
+                        <div class="summary-value">4.9 млрд ₽</div>
+                        <div class="summary-sub">750 т.р./м²</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Выручка паркинг</div>
+                        <div class="summary-value">3.1 млрд ₽</div>
+                        <div class="summary-sub">4.5 млн/м.м.</div>
+                    </div>
+                    <div class="summary-card" style="border-color: var(--success);">
+                        <div class="summary-label">ИТОГО выручка</div>
+                        <div class="summary-value" style="color: var(--success);">73.5 млрд ₽</div>
+                        <div class="summary-sub">754 т.р./м² средн.</div>
+                    </div>
+                </div>
+
+                <!-- Prices Table -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Цены и выручка по видам ОН</div>
+                            <div class="form-subtitle">Цена на старте, рост, итоговая выручка</div>
+                        </div>
+                    </div>
+
+                    <div class="form-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 150px;">Вид ОН</th>
+                                    <th>Площадь, м²</th>
+                                    <th>Цена старт</th>
+                                    <th>Рост цены</th>
+                                    <th>Цена средняя</th>
+                                    <th>Выручка, млн ₽</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="row-label">
+                                            <span style="color: var(--accent);">●</span>
+                                            КВАРТИРЫ
+                                        </div>
+                                    </td>
+                                    <td class="cell-calc">91 000</td>
+                                    <td>
+                                        <input type="text" value="577" id="price-kv-start" onchange="recalcKv()" />
+                                        <div class="quick-buttons" style="margin-top: 6px;">
+                                            <button class="quick-btn" onclick="setPriceKv(550)">550</button>
+                                            <button class="quick-btn selected" onclick="setPriceKv(577)">577</button>
+                                            <button class="quick-btn" onclick="setPriceKv(600)">600</button>
+                                            <button class="quick-btn" onclick="setPriceKv(650)">650</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="text" value="+25%" />
+                                    </td>
+                                    <td class="cell-calc" style="font-weight: 600;">719</td>
+                                    <td style="font-weight: 600; color: var(--success);">65 429</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-label">
+                                            <span style="color: var(--success);">●</span>
+                                            РИТЕЙЛ
+                                        </div>
+                                    </td>
+                                    <td class="cell-calc">6 514</td>
+                                    <td><input type="text" value="750" /></td>
+                                    <td><input type="text" value="0%" /></td>
+                                    <td class="cell-calc" style="font-weight: 600;">750</td>
+                                    <td style="font-weight: 600; color: var(--success);">4 886</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-label">
+                                            <span style="color: var(--purple);">●</span>
+                                            ПАРКИНГ
+                                        </div>
+                                    </td>
+                                    <td class="cell-calc">696 м.м.</td>
+                                    <td><input type="text" value="4 500" placeholder="т.р./м.м." /></td>
+                                    <td><input type="text" value="0%" /></td>
+                                    <td class="cell-calc" style="font-weight: 600;">4 500</td>
+                                    <td style="font-weight: 600; color: var(--success);">3 132</td>
+                                </tr>
+                                <tr class="row-total">
+                                    <td><strong>ИТОГО</strong></td>
+                                    <td><strong>97 514</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td><strong>754</strong></td>
+                                    <td><strong style="color: var(--success);">73 447</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- AI Hint -->
+                    <div class="form-body" style="padding-top: 0;">
+                        <div class="ai-hint">
+                            <div class="ai-icon">
+                                <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/></svg>
+                            </div>
+                            <div class="ai-content">
+                                <div class="ai-title">Бенчмарк цен</div>
+                                <div class="ai-text">
+                                    Средняя цена 719 т.р./м² соответствует <strong>бизнес+ классу</strong> в СВАО.<br>
+                                    Диапазон по аналогам (Алексеевская, ВДНХ): 680–780 т.р./м²
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Распределение продаж по периодам</div>
+                            <div class="form-subtitle">Квартиры — 91 000 м² за 36 месяцев</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-ghost" onclick="setDistribution('linear')">Линейно</button>
+                            <button class="btn btn-primary" onclick="setDistribution('scurve')">S-кривая</button>
+                            <button class="btn btn-ghost" onclick="setDistribution('tail')">Хвост</button>
+                        </div>
+                    </div>
+
+                    <div class="form-body">
+                        <!-- Chart -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <span class="chart-title">Продажи, м²/мес</span>
+                                <span class="tag tag-blue">S-кривая</span>
+                            </div>
+                            <div class="chart" id="sales-chart">
+                                <!-- Bars will be generated by JS -->
+                            </div>
+                            <div class="chart-labels" id="chart-labels">
+                                <!-- Labels will be generated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="distribution-panel">
+                            <div class="dist-header">
+                                <span style="font-weight: 500;">Параметры распределения</span>
+                            </div>
+                            <div class="dist-controls">
+                                <div class="slider-group">
+                                    <span class="slider-label">Старт продаж</span>
+                                    <div class="slider-row">
+                                        <input type="range" min="1" max="12" value="3" id="start-month" onchange="updateChart()" />
+                                        <span class="slider-value" id="start-month-val">мес. 3</span>
+                                    </div>
+                                </div>
+                                <div class="slider-group">
+                                    <span class="slider-label">Пик продаж</span>
+                                    <div class="slider-row">
+                                        <input type="range" min="20" max="80" value="50" id="peak-pct" onchange="updateChart()" />
+                                        <span class="slider-value" id="peak-pct-val">50%</span>
+                                    </div>
+                                </div>
+                                <div class="slider-group">
+                                    <span class="slider-label">Срок продаж</span>
+                                    <div class="slider-row">
+                                        <input type="range" min="24" max="48" value="36" id="duration" onchange="updateChart()" />
+                                        <span class="slider-value" id="duration-val">36 мес.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 20px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+                                <div>
+                                    <span class="form-hint">Продано к сдаче:</span>
+                                    <span style="font-weight: 600; margin-left: 8px;">78%</span>
+                                </div>
+                                <div>
+                                    <span class="form-hint">Средний темп:</span>
+                                    <span style="font-weight: 600; margin-left: 8px;">2 528 м²/мес</span>
+                                </div>
+                                <div>
+                                    <span class="form-hint">Пиковый темп:</span>
+                                    <span style="font-weight: 600; margin-left: 8px;">4 200 м²/мес</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly breakdown preview -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Помесячный план (превью)</div>
+                        </div>
+                        <button class="btn btn-ghost">Показать всё</button>
+                    </div>
+                    <div class="form-body" style="padding: 0;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Период</th>
+                                    <th>Продажи, м²</th>
+                                    <th>Цена, т.р.</th>
+                                    <th>Выручка, млн</th>
+                                    <th>Накопл., м²</th>
+                                    <th>% выполн.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Q1 2027</td>
+                                    <td>4 550</td>
+                                    <td>577</td>
+                                    <td>2 625</td>
+                                    <td>4 550</td>
+                                    <td>5%</td>
+                                </tr>
+                                <tr>
+                                    <td>Q2 2027</td>
+                                    <td>7 280</td>
+                                    <td>592</td>
+                                    <td>4 310</td>
+                                    <td>11 830</td>
+                                    <td>13%</td>
+                                </tr>
+                                <tr>
+                                    <td>Q3 2027</td>
+                                    <td>9 100</td>
+                                    <td>620</td>
+                                    <td>5 642</td>
+                                    <td>20 930</td>
+                                    <td>23%</td>
+                                </tr>
+                                <tr>
+                                    <td>Q4 2027</td>
+                                    <td>10 920</td>
+                                    <td>655</td>
+                                    <td>7 153</td>
+                                    <td>31 850</td>
+                                    <td>35%</td>
+                                </tr>
+                                <tr style="color: var(--text-muted);">
+                                    <td colspan="6" style="text-align: center;">... ещё 8 кварталов ...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="actions-bar">
+                <div class="actions-left">
+                    <a href="costs.html" class="btn btn-ghost">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        Назад: Расходы
+                    </a>
+                </div>
+                <div class="actions-right">
+                    <button class="btn btn-ghost">Сохранить</button>
+                    <a href="dashboard.html" class="btn btn-primary">
+                        Далее: Итоги
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Generate chart
+        function generateSCurve(months, peakPct) {
+            const data = [];
+            const peak = months * (peakPct / 100);
+            for (let i = 0; i < months; i++) {
+                // S-curve formula
+                const x = (i - peak) / (months / 6);
+                const y = 1 / (1 + Math.exp(-x));
+                data.push(y);
+            }
+            // Normalize
+            const max = Math.max(...data);
+            return data.map(v => v / max);
+        }
+
+        function generateLinear(months) {
+            return Array(months).fill(1);
+        }
+
+        function generateTail(months) {
+            const data = [];
+            for (let i = 0; i < months; i++) {
+                data.push(1 + (i / months) * 1.5);
+            }
+            return data;
+        }
+
+        let currentDistribution = 'scurve';
+
+        function setDistribution(type) {
+            currentDistribution = type;
+            document.querySelectorAll('.form-header .btn').forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-ghost');
+            });
+            event.target.classList.remove('btn-ghost');
+            event.target.classList.add('btn-primary');
+            updateChart();
+        }
+
+        function updateChart() {
+            const startMonth = parseInt(document.getElementById('start-month').value);
+            const peakPct = parseInt(document.getElementById('peak-pct').value);
+            const duration = parseInt(document.getElementById('duration').value);
+
+            document.getElementById('start-month-val').textContent = `мес. ${startMonth}`;
+            document.getElementById('peak-pct-val').textContent = `${peakPct}%`;
+            document.getElementById('duration-val').textContent = `${duration} мес.`;
+
+            let data;
+            switch (currentDistribution) {
+                case 'linear': data = generateLinear(duration); break;
+                case 'tail': data = generateTail(duration); break;
+                default: data = generateSCurve(duration, peakPct);
+            }
+
+            const chart = document.getElementById('sales-chart');
+            const labels = document.getElementById('chart-labels');
+            chart.innerHTML = '';
+            labels.innerHTML = '';
+
+            const max = Math.max(...data);
+            data.forEach((val, i) => {
+                const height = (val / max) * 100;
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${height}%`;
+                if (i >= duration * 0.4 && i <= duration * 0.6) {
+                    bar.classList.add('highlight');
+                }
+                chart.appendChild(bar);
+
+                if (i % 6 === 0 || i === duration - 1) {
+                    const label = document.createElement('div');
+                    label.className = 'chart-label';
+                    label.textContent = `${i + startMonth}`;
+                    label.style.flex = '6';
+                    labels.appendChild(label);
+                }
+            });
+        }
+
+        // Init
+        updateChart();
+
+        // Quick buttons
+        document.querySelectorAll('.quick-buttons').forEach(group => {
+            group.querySelectorAll('.quick-btn').forEach(btn => {
+                if (!btn.onclick) {
+                    btn.addEventListener('click', () => {
+                        group.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                    });
+                }
+            });
+        });
+
+        function setPriceKv(val) {
+            document.getElementById('price-kv-start').value = val;
+        }
+    </script>
+</body>
+</html>
