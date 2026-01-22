@@ -2,4 +2,3 @@ __pycache__/
 *.pyc
 *.pyo
 .fm_config.json
-fm_model.json
