@@ -45,12 +45,13 @@ class CalcEngine:
 
         self.excel_path = excel_path
         self._compiler = None
+        self._cycles = True  # Enable circular reference support
         self._load_workbook()
 
     def _load_workbook(self):
         """Load and compile the Excel workbook"""
         print(f"Loading workbook: {self.excel_path}")
-        self._compiler = ExcelCompiler(filename=self.excel_path)
+        self._compiler = ExcelCompiler(filename=self.excel_path, cycles=self._cycles)
         print("Workbook loaded successfully")
 
     def evaluate(self, cell_address: str) -> Any:
