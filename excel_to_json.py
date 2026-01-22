@@ -49,8 +49,19 @@ def convert_excel_to_json(excel_path: str, output_path: str = None) -> str:
         sheet_data = {
             "rows": sheet.max_row,
             "cols": sheet.max_column,
-            "cells": {}
+            "cells": {},
+            "merged": []  # объединённые ячейки
         }
+
+        # Сохраняем информацию об объединённых ячейках
+        for merged_range in sheet.merged_cells.ranges:
+            sheet_data["merged"].append({
+                "range": str(merged_range),
+                "start": merged_range.min_col,
+                "end": merged_range.max_col,
+                "top": merged_range.min_row,
+                "bottom": merged_range.max_row
+            })
 
         for row in sheet.iter_rows():
             for cell in row:
