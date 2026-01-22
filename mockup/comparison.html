@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM AI - Сравнение со входом</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .header-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header-info span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-assistant {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-user .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            max-width: 80%;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Таблица сравнения */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+            background: #252525;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            text-align: left;
+            padding: 12px 14px;
+            background: #2a2a2a;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .comparison-table th:not(:first-child) {
+            text-align: right;
+        }
+
+        .comparison-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .comparison-table td:not(:first-child) {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .delta-positive {
+            color: #22c55e;
+        }
+
+        .delta-negative {
+            color: #ef4444;
+        }
+
+        .delta-neutral {
+            color: #888;
+        }
+
+        /* Выводы */
+        .conclusions {
+            background: #252525;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .conclusions-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .conclusions ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .conclusions li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #d0d0d0;
+        }
+
+        .conclusions li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #f59e0b;
+        }
+
+        /* Warning */
+        .warning-block {
+            background: rgba(234, 179, 8, 0.1);
+            border-left: 3px solid #eab308;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Кнопки */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #a0a0a0;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Инпут */
+        .chat-input-container {
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+            margin-top: auto;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #f5f5f5;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #f59e0b;
+        }
+
+        .mic-btn, .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            color: #000;
+        }
+
+        /* Typing */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Заголовок таблицы */
+        .table-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <button class="back-btn" onclick="window.location.href='startup.html'">&#8592;</button>
+            <div class="header-info">
+                <h1>&#129302; AI Финансовый ассистент</h1>
+                <span>Сравнение версий • Проспект Мира</span>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" placeholder="Введите сообщение..." id="chatInput">
+                <button class="mic-btn">&#127908;</button>
+                <button class="send-btn" onclick="sendMessage()">&#10148;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        let step = 0;
+
+        const conversation = [
+            {
+                type: 'user',
+                content: 'Сравни вариант входа в проект и текущую модель по основным ФЭП'
+            },
+            {
+                type: 'assistant',
+                content: `Сравнение: <strong>вход в проект vs текущая модель</strong>
+
+<table class="comparison-table">
+    <thead>
+        <tr>
+            <th>Показатель</th>
+            <th>Вход</th>
+            <th>Текущая</th>
+            <th>&#916;</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Цена продажи, т.р/м²</td>
+            <td>550</td>
+            <td>605</td>
+            <td class="delta-positive">+55 +10%</td>
+        </tr>
+        <tr>
+            <td>СМР, т.р/м²</td>
+            <td>230</td>
+            <td>265</td>
+            <td class="delta-negative">+35 +15%</td>
+        </tr>
+        <tr>
+            <td>Налоги + фин.расх.</td>
+            <td>48</td>
+            <td>60</td>
+            <td class="delta-negative">+12 +25%</td>
+        </tr>
+        <tr>
+            <td>Маржа, т.р/м²</td>
+            <td>85</td>
+            <td>93</td>
+            <td class="delta-positive">+8 +9%</td>
+        </tr>
+        <tr>
+            <td>Маржа, млн &#8381;</td>
+            <td>2 720</td>
+            <td>3 280</td>
+            <td class="delta-positive">+560</td>
+        </tr>
+        <tr>
+            <td>Маржинальность</td>
+            <td>15.5%</td>
+            <td>15.4%</td>
+            <td class="delta-neutral">−0.1%</td>
+        </tr>
+        <tr>
+            <td>IRR</td>
+            <td>22%</td>
+            <td>21%</td>
+            <td class="delta-negative">−1%</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="conclusions">
+    <div class="conclusions-header">
+        <span>&#128221;</span> Выводы:
+    </div>
+    <ul>
+        <li>Цены выросли на <strong>10%</strong> (+55 т.р/м²)</li>
+        <li>СМР подорожал на <strong>15%</strong> (+35 т.р/м²)</li>
+        <li>Налоги и финрасходы <strong>+12 т.р/м²</strong></li>
+        <li>Но финрез лучше на <strong>8 т.р/м²</strong> или <strong>560 млн &#8381;</strong></li>
+        <li>Маржинальность почти не изменилась</li>
+    </ul>
+</div>`,
+                buttons: [
+                    { text: '&#128196; Скачать сравнение', primary: true, action: 'download' },
+                    { text: 'Детальный анализ', action: 'details' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'А что с ликвидностью при раскрытии эскроу?'
+            },
+            {
+                type: 'assistant',
+                content: `Сравнение ликвидности при раскрытии:
+
+<table class="comparison-table">
+    <thead>
+        <tr>
+            <th>Показатель</th>
+            <th>Вход</th>
+            <th>Текущая</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Накоплено на эскроу</td>
+            <td>4.2 млрд</td>
+            <td>4.6 млрд</td>
+        </tr>
+        <tr>
+            <td>Долг ПФ на момент раскр.</td>
+            <td>4.0 млрд</td>
+            <td>5.4 млрд</td>
+        </tr>
+        <tr>
+            <td>Погашение при раскрытии</td>
+            <td class="delta-positive">95%</td>
+            <td class="delta-negative">85%</td>
+        </tr>
+        <tr>
+            <td>Остаток долга</td>
+            <td>200 млн</td>
+            <td>810 млн</td>
+        </tr>
+        <tr>
+            <td>Срок погашения остатка</td>
+            <td>1 кв</td>
+            <td>2 кв</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="conclusions">
+    <div class="conclusions-header">
+        <span>&#128221;</span> Резюме:
+    </div>
+    <ul>
+        <li>В базовом варианте при раскрытии эскроу погашалось <strong>95%</strong> ПФ</li>
+        <li>В текущей модели — <strong>85%</strong>, остаток <strong>810 млн</strong> гасится из продаж за 2 квартала</li>
+    </ul>
+</div>
+
+<div class="warning-block">
+    <span>&#9888;&#65039;</span> <strong>Риск:</strong> увеличенная зависимость от темпов продаж после ввода в эксплуатацию.
+</div>`,
+                buttons: [
+                    { text: '&#128200; График ликвидности', action: 'liquidity_chart' },
+                    { text: 'Стресс-тест', action: 'stress_test' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'Сделай стресс-тест — падение продаж на 30%'
+            },
+            {
+                type: 'assistant',
+                content: `Стресс-тест: падение темпов продаж на <strong>30%</strong>
+
+<table class="comparison-table">
+    <thead>
+        <tr>
+            <th>Показатель</th>
+            <th>Базовый</th>
+            <th>Стресс −30%</th>
+            <th>&#916;</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Срок продаж</td>
+            <td>24 мес</td>
+            <td>34 мес</td>
+            <td class="delta-negative">+10 мес</td>
+        </tr>
+        <tr>
+            <td>Доп. % по ПФ</td>
+            <td>—</td>
+            <td>180 млн</td>
+            <td class="delta-negative">+180 млн</td>
+        </tr>
+        <tr>
+            <td>Чистая прибыль</td>
+            <td>3 280 млн</td>
+            <td>3 020 млн</td>
+            <td class="delta-negative">−260 млн</td>
+        </tr>
+        <tr>
+            <td>IRR</td>
+            <td>21%</td>
+            <td>17%</td>
+            <td class="delta-negative">−4%</td>
+        </tr>
+        <tr>
+            <td>Наполнение эскроу мин.</td>
+            <td>71%</td>
+            <td>58%</td>
+            <td class="delta-negative">−13%</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="warning-block">
+    <span>&#128308;</span> <strong>Критично:</strong> Наполнение эскроу <strong>58%</strong> при ковенанте <strong>70%</strong>.<br>
+    Нарушение ковенанта через 2 квартала после старта стресс-сценария.
+</div>
+
+<div class="conclusions">
+    <div class="conclusions-header">
+        <span>&#128161;</span> Рекомендации:
+    </div>
+    <ul>
+        <li>Сформировать резерв <strong>500 млн</strong> на случай стресса</li>
+        <li>Пересмотреть график выборки ПФ с банком</li>
+        <li>Подготовить план скидочных акций для ускорения продаж</li>
+    </ul>
+</div>`,
+                buttons: [
+                    { text: '&#128196; Экспорт отчёта', primary: true, action: 'export' },
+                    { text: 'Другой сценарий', action: 'another' },
+                    { text: 'На главную', action: 'home' }
+                ]
+            }
+        ];
+
+        function addMessage(msg) {
+            const div = document.createElement('div');
+            div.className = `message message-${msg.type}`;
+
+            let html = '';
+            if (msg.type === 'assistant') {
+                html = `
+                    <div class="avatar">&#129302;</div>
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        ${msg.buttons ? `
+                            <div class="action-buttons">
+                                ${msg.buttons.map(b => `
+                                    <button class="action-btn ${b.primary ? 'primary' : 'secondary'}"
+                                            onclick="handleAction('${b.action}')">${b.text}</button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            } else {
+                html = `
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            }
+
+            div.innerHTML = html;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message message-assistant';
+            div.id = 'typing';
+            div.innerHTML = `
+                <div class="avatar">&#129302;</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            const t = document.getElementById('typing');
+            if (t) t.remove();
+        }
+
+        function handleAction(action) {
+            if (action === 'home') {
+                window.location.href = 'startup.html';
+                return;
+            }
+
+            if (step < conversation.length - 1) {
+                step++;
+                addMessage(conversation[step]);
+                if (conversation[step].type === 'user' && step < conversation.length - 1) {
+                    step++;
+                    setTimeout(() => {
+                        showTyping();
+                        setTimeout(() => {
+                            hideTyping();
+                            addMessage(conversation[step]);
+                        }, 1500);
+                    }, 300);
+                }
+            } else {
+                alert('Действие: ' + action);
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage({ type: 'user', content: text });
+            input.value = '';
+
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    step = Math.min(step + 2, conversation.length - 1);
+                    if (conversation[step]) {
+                        addMessage(conversation[step]);
+                    }
+                }, 1500);
+            }, 300);
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Start
+        setTimeout(() => {
+            addMessage(conversation[0]);
+            step = 1;
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    addMessage(conversation[1]);
+                }, 1500);
+            }, 500);
+        }, 300);
+    </script>
+</body>
+</html>

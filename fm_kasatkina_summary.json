@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "source": "FM_Касаткина2.xlsx",
+    "exported": "2026-01-22T15:40:25.287885",
+    "project": "КАСАТКИНА",
+    "sheets": 16
+  },
+  "project": {
+    "name": "КАСАТКИНА",
+    "address": " ул. КАСАТКИНА, ВЛ. 7",
+    "очередей": 2
+  },
+  "key_metrics": {
+    "выручка_млн": 78746.09,
+    "прибыль_млн": 9345.55,
+    "IRR_проекта": "17.5%",
+    "IRR_инвестора": "63.3%",
+    "маржа_после_НО": "11.9%"
+  },
+  "площади": {
+    "общая_м2": 178143.0,
+    "полезная_м2": 165673.0,
+    "НПС_м2": 116376.0
+  },
+  "costs_structure": {
+    "СМР_жилье_руб_м2": 137000,
+    "проектирование_руб_м2": 7310.43157777449,
+    "согласования_руб_м2": 1000,
+    "СМР_соц_объекты_руб_м2": 20791.0,
+    "сети_руб_м2": 5500
+  },
+  "sheets_summary": {
+    "МАСТЕР ПЛАН": {
+      "cells": 107,
+      "formulas": 41,
+      "dimensions": {
+        "rows": 60,
+        "cols": 34
+      }
+    },
+    "RESUME": {
+      "cells": 1430,
+      "formulas": 1141,
+      "dimensions": {
+        "rows": 152,
+        "cols": 32
+      }
+    },
+    "DB": {
+      "cells": 634,
+      "formulas": 328,
+      "dimensions": {
+        "rows": 108,
+        "cols": 32
+      }
+    },
+    "DB1": {
+      "cells": 469,
+      "formulas": 261,
+      "dimensions": {
+        "rows": 53,
+        "cols": 32
+      }
+    },
+    "DB2": {
+      "cells": 473,
+      "formulas": 265,
+      "dimensions": {
+        "rows": 53,
+        "cols": 32
+      }
+    },
+    "CF": {
+      "cells": 11125,
+      "formulas": 10829,
+      "dimensions": {
+        "rows": 223,
+        "cols": 68
+      }
+    },
+    "CF1": {
+      "cells": 9494,
+      "formulas": 9265,
+      "dimensions": {
+        "rows": 204,
+        "cols": 68
+      }
+    },
+    "CF2": {
+      "cells": 9665,
+      "formulas": 9465,
+      "dimensions": {
+        "rows": 204,
+        "cols": 68
+      }
+    },
+    "TS1": {
+      "cells": 4514,
+      "formulas": 4171,
+      "dimensions": {
+        "rows": 125,
+        "cols": 65
+      }
+    },
+    "TS2": {
+      "cells": 4496,
+      "formulas": 4108,
+      "dimensions": {
+        "rows": 125,
+        "cols": 65
+      }
+    },
+    "DETAILS": {
+      "cells": 7550,
+      "formulas": 5610,
+      "dimensions": {
+        "rows": 419,
+        "cols": 70
+      }
+    },
+    "FACT": {
+      "cells": 3248,
+      "formulas": 595,
+      "dimensions": {
+        "rows": 199,
+        "cols": 32
+      }
+    },
+    "БИТ": {
+      "cells": 7021,
+      "formulas": 1891,
+      "dimensions": {
+        "rows": 313,
+        "cols": 51
+      }
+    },
+    "CONTRACT": {
+      "cells": 8,
+      "formulas": 0,
+      "dimensions": {
+        "rows": 34,
+        "cols": 8
+      }
+    },
+    "ПРОДАЖИ": {
+      "cells": 1624,
+      "formulas": 1011,
+      "dimensions": {
+        "rows": 158,
+        "cols": 63
+      }
+    },
+    "СОЦИАЛКА": {
+      "cells": 336,
+      "formulas": 140,
+      "dimensions": {
+        "rows": 242,
+        "cols": 32
+      }
+    }
+  }
+}

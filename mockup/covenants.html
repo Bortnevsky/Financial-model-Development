@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM AI - Проверка ковенантов</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .header-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header-info span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-assistant {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-user .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            max-width: 80%;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Таблица ковенантов */
+        .covenant-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+            background: #252525;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .covenant-table th {
+            text-align: left;
+            padding: 12px 14px;
+            background: #2a2a2a;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .covenant-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .covenant-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .covenant-table .amount {
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+
+        /* Статусы */
+        .status-green {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: rgba(34, 197, 94, 0.2);
+            border-radius: 50%;
+            font-size: 14px;
+        }
+
+        .status-yellow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: rgba(234, 179, 8, 0.2);
+            border-radius: 50%;
+            font-size: 14px;
+        }
+
+        .status-red {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 50%;
+            font-size: 14px;
+        }
+
+        .delta-negative {
+            color: #ef4444;
+        }
+
+        .delta-positive {
+            color: #22c55e;
+        }
+
+        /* Предупреждения */
+        .warning-block {
+            background: rgba(234, 179, 8, 0.1);
+            border-left: 3px solid #eab308;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .warning-block .icon {
+            margin-right: 8px;
+        }
+
+        /* Заголовок */
+        .table-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        /* Таблица эскроу */
+        .escrow-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+            background: #252525;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .escrow-table th {
+            text-align: left;
+            padding: 12px 14px;
+            background: #2a2a2a;
+            color: #888;
+        }
+
+        .escrow-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .escrow-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .escrow-table .value {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .escrow-table .highlight-row {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .escrow-table .highlight-row td {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        /* Success block */
+        .success-block {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Кнопки */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #a0a0a0;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Инпут */
+        .chat-input-container {
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+            margin-top: auto;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #f5f5f5;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #f59e0b;
+        }
+
+        .mic-btn, .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            color: #000;
+        }
+
+        /* Typing */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .footnote {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <button class="back-btn" onclick="window.location.href='startup.html'">&#8592;</button>
+            <div class="header-info">
+                <h1>&#129302; AI Финансовый ассистент</h1>
+                <span>Ковенанты • Проспект Мира</span>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" placeholder="Введите сообщение..." id="chatInput">
+                <button class="mic-btn">&#127908;</button>
+                <button class="send-btn" onclick="sendMessage()">&#10148;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        let step = 0;
+
+        const conversation = [
+            {
+                type: 'user',
+                content: 'Покажи по проспекту Мира какие сейчас ковенанты в красной или жёлтой зоне'
+            },
+            {
+                type: 'assistant',
+                content: `Катя, лови отчёт по ковенантам:
+
+<div class="table-header">
+    <span>&#127959;&#65039;</span>
+    Проспект Мира — статус ковенантов
+</div>
+
+<table class="covenant-table">
+    <thead>
+        <tr>
+            <th>Ковенант</th>
+            <th class="amount">Банк. модель</th>
+            <th class="amount">Факт/Прогноз</th>
+            <th class="amount">&#916;</th>
+            <th style="text-align:center">Статус</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Цена продажи</td>
+            <td class="amount">550 т.р/м²</td>
+            <td class="amount">545 т.р/м²</td>
+            <td class="amount delta-negative">−5</td>
+            <td style="text-align:center"><span class="status-yellow">&#128993;</span></td>
+        </tr>
+        <tr>
+            <td>Темп продаж</td>
+            <td class="amount">2.2 млрд</td>
+            <td class="amount">1.9 млрд *</td>
+            <td class="amount delta-negative">−0.3</td>
+            <td style="text-align:center"><span class="status-yellow">&#128993;</span></td>
+        </tr>
+        <tr>
+            <td>СМР выполнение</td>
+            <td class="amount">45%</td>
+            <td class="amount">47%</td>
+            <td class="amount delta-positive">+2%</td>
+            <td style="text-align:center"><span class="status-green">&#128994;</span></td>
+        </tr>
+        <tr>
+            <td>Сроки ввода</td>
+            <td class="amount">4 кв 2027</td>
+            <td class="amount">4 кв 2027</td>
+            <td class="amount">0</td>
+            <td style="text-align:center"><span class="status-green">&#128994;</span></td>
+        </tr>
+    </tbody>
+</table>
+<div class="footnote">* прогноз на следующий квартал</div>
+
+<div class="warning-block">
+    <span class="icon">&#9888;&#65039;</span>
+    <strong>По ценам:</strong> банк ждёт 550 т.р., факт 545 т.р.<br>
+    В пределах допуска (−2%), но на грани.
+</div>
+
+<div class="warning-block">
+    <span class="icon">&#9888;&#65039;</span>
+    <strong>По темпам:</strong> план 2.2 млрд на эскроу, прогноз 1.9 млрд.<br>
+    Отставание 14%, требует внимания.
+</div>`,
+                buttons: [
+                    { text: 'Подробнее по ценам', action: 'prices' },
+                    { text: 'План продаж', action: 'sales_plan' },
+                    { text: 'История ковенантов', action: 'history' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'А какое сейчас наполнение эскроу?'
+            },
+            {
+                type: 'assistant',
+                content: `Вот текущее состояние эскроу:
+
+<div class="table-header">
+    <span>&#128202;</span>
+    Эскроу по проспекту Мира (на 01.01.2026)
+</div>
+
+<table class="escrow-table">
+    <thead>
+        <tr>
+            <th>Показатель</th>
+            <th class="value">Значение</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Остаток на эскроу</td>
+            <td class="value">1.5 млрд</td>
+        </tr>
+        <tr>
+            <td>Выборка ПФ</td>
+            <td class="value">2.1 млрд</td>
+        </tr>
+        <tr class="highlight-row">
+            <td>Наполнение эскроу</td>
+            <td class="value">71%</td>
+        </tr>
+        <tr>
+            <td>Ковенант (мин.)</td>
+            <td class="value">70%</td>
+        </tr>
+        <tr>
+            <td>Запас</td>
+            <td class="value" style="color: #22c55e;">+1%</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="success-block">
+    &#10004; Наполнение <strong>71%</strong> — ковенант 70% соблюдается, но запас минимальный.<br>
+    При падении продаж может потребоваться корректировка графика выборки ПФ.
+</div>`,
+                buttons: [
+                    { text: '&#128200; График эскроу', action: 'escrow_chart' },
+                    { text: 'Прогноз наполнения', action: 'forecast' },
+                    { text: 'Отчёт в банк', primary: true, action: 'bank_report' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'Сформируй отчёт в банк'
+            },
+            {
+                type: 'assistant',
+                content: `Готово! Сформировал отчёт для банка:
+
+<div style="background: #252525; border-radius: 12px; padding: 16px; margin: 12px 0;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 24px;">&#128196;</span>
+        <div>
+            <div style="font-weight: 600;">Отчёт_Проспект_Мира_Q4_2025.pdf</div>
+            <div style="font-size: 12px; color: #888;">2.4 MB • Сформирован 21.01.2026</div>
+        </div>
+    </div>
+    <div style="font-size: 13px; color: #a0a0a0; line-height: 1.5;">
+        &#8226; Статус ковенантов<br>
+        &#8226; Динамика эскроу за квартал<br>
+        &#8226; Прогноз на следующий период<br>
+        &#8226; План мероприятий по отклонениям
+    </div>
+</div>
+
+Отправить на согласование CFO перед отправкой в банк?`,
+                buttons: [
+                    { text: 'Отправить CFO', primary: true, action: 'send_cfo' },
+                    { text: 'Скачать', action: 'download' },
+                    { text: 'Редактировать', action: 'edit' }
+                ]
+            }
+        ];
+
+        function addMessage(msg) {
+            const div = document.createElement('div');
+            div.className = `message message-${msg.type}`;
+
+            let html = '';
+            if (msg.type === 'assistant') {
+                html = `
+                    <div class="avatar">&#129302;</div>
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        ${msg.buttons ? `
+                            <div class="action-buttons">
+                                ${msg.buttons.map(b => `
+                                    <button class="action-btn ${b.primary ? 'primary' : 'secondary'}"
+                                            onclick="handleAction('${b.action}')">${b.text}</button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            } else {
+                html = `
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            }
+
+            div.innerHTML = html;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message message-assistant';
+            div.id = 'typing';
+            div.innerHTML = `
+                <div class="avatar">&#129302;</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            const t = document.getElementById('typing');
+            if (t) t.remove();
+        }
+
+        function handleAction(action) {
+            if (step < conversation.length - 1) {
+                step++;
+                addMessage(conversation[step]);
+                if (conversation[step].type === 'user' && step < conversation.length - 1) {
+                    step++;
+                    setTimeout(() => {
+                        showTyping();
+                        setTimeout(() => {
+                            hideTyping();
+                            addMessage(conversation[step]);
+                        }, 1200);
+                    }, 300);
+                }
+            } else {
+                alert('Действие: ' + action);
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage({ type: 'user', content: text });
+            input.value = '';
+
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    step = Math.min(step + 2, conversation.length - 1);
+                    if (conversation[step]) {
+                        addMessage(conversation[step]);
+                    }
+                }, 1500);
+            }, 300);
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Start
+        setTimeout(() => {
+            addMessage(conversation[0]);
+            step = 1;
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    addMessage(conversation[1]);
+                }, 1500);
+            }, 500);
+        }, 300);
+    </script>
+</body>
+</html>

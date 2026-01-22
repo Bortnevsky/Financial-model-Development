@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — Список проектов</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Портфель</div>
+                <div class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Сводный анализ
+                </div>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                    Список проектов
+                </div>
+            </nav>
+
+            <nav class="nav-section" style="margin-top: auto; border-top: 1px solid var(--border); padding-top: 16px;">
+                <div class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    Настройки
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 style="font-size: 18px; font-weight: 600;">Список проектов</h1>
+                    <span class="badge">3 проекта</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Импорт Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        Новый проект
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" placeholder="Поиск по названию или адресу..." />
+                    </div>
+                    <div class="filter-chips">
+                        <button class="chip active">Все</button>
+                        <button class="chip">Черновик</button>
+                        <button class="chip">В работе</button>
+                        <button class="chip">Утверждён</button>
+                    </div>
+                </div>
+
+                <!-- Projects Table -->
+                <div class="form-card">
+                    <table class="data-table projects-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>Проект</th>
+                                <th>Площадь</th>
+                                <th>Выручка</th>
+                                <th>Маржа</th>
+                                <th>Статус</th>
+                                <th>Обновлён</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="clickable" onclick="location.href='dashboard.html'">
+                                <td>
+                                    <div class="project-icon" style="background: linear-gradient(135deg, #3fb950, #238636);">М</div>
+                                </td>
+                                <td>
+                                    <div class="project-name">Мира</div>
+                                    <div class="project-address">Проспект Мира, 102</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">245 000 м²</div>
+                                    <div class="cell-sub">полезн. 171 500</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">128.5 млрд ₽</div>
+                                    <div class="cell-sub">749 т.р./м²</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">67.2 млрд ₽</div>
+                                    <div class="cell-sub color-success">52%</div>
+                                </td>
+                                <td><span class="status status-success">Утверждён</span></td>
+                                <td class="cell-sub">12 янв</td>
+                                <td>
+                                    <button class="btn-icon">⋮</button>
+                                </td>
+                            </tr>
+                            <tr class="clickable" onclick="location.href='dashboard.html'">
+                                <td>
+                                    <div class="project-icon" style="background: linear-gradient(135deg, #58a6ff, #1f6feb);">С</div>
+                                </td>
+                                <td>
+                                    <div class="project-name">Сколково Парк</div>
+                                    <div class="project-address">Сколково, уч. 28-4</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">89 000 м²</div>
+                                    <div class="cell-sub">полезн. 62 300</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">52.1 млрд ₽</div>
+                                    <div class="cell-sub">836 т.р./м²</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">24.8 млрд ₽</div>
+                                    <div class="cell-sub color-success">48%</div>
+                                </td>
+                                <td><span class="status status-success">Утверждён</span></td>
+                                <td class="cell-sub">8 янв</td>
+                                <td>
+                                    <button class="btn-icon">⋮</button>
+                                </td>
+                            </tr>
+                            <tr class="clickable highlight-new" onclick="location.href='tep.html'">
+                                <td>
+                                    <div class="project-icon" style="background: linear-gradient(135deg, #d29922, #9e6a03);">К</div>
+                                </td>
+                                <td>
+                                    <div class="project-name">Касаткина 7 <span class="badge-new">новый</span></div>
+                                    <div class="project-address">ул. Касаткина, вл. 7</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main">140 714 м²</div>
+                                    <div class="cell-sub">полезн. 97 514</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main color-muted">—</div>
+                                    <div class="cell-sub">не заполнено</div>
+                                </td>
+                                <td>
+                                    <div class="cell-main color-muted">—</div>
+                                    <div class="cell-sub"></div>
+                                </td>
+                                <td><span class="status status-warning">Черновик</span></td>
+                                <td class="cell-sub">сейчас</td>
+                                <td>
+                                    <button class="btn-icon">⋮</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: New Project -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Новый проект</h2>
+                <button class="btn-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Название проекта <span class="required">*</span></label>
+                    <input type="text" class="form-input" placeholder="Например: Касаткина 7" value="Касаткина 7" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Адрес</label>
+                    <input type="text" class="form-input" placeholder="Улица, дом" value="ул. Касаткина, вл. 7" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Количество ПК</label>
+                        <div class="quick-buttons">
+                            <button class="quick-btn selected">1</button>
+                            <button class="quick-btn">2</button>
+                            <button class="quick-btn">3</button>
+                            <button class="quick-btn">4+</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Периодичность</label>
+                        <div class="quick-buttons">
+                            <button class="quick-btn selected">Месяц</button>
+                            <button class="quick-btn">Квартал</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Класс проекта</label>
+                    <div class="quick-buttons">
+                        <button class="quick-btn">Комфорт</button>
+                        <button class="quick-btn selected">Бизнес</button>
+                        <button class="quick-btn">Премиум</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="location.href='tep.html'">
+                    Создать и перейти к ТЭП
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('modal').classList.add('open');
+        }
+        function closeModal(e) {
+            if (!e || e.target === e.currentTarget) {
+                document.getElementById('modal').classList.remove('open');
+            }
+        }
+
+        // Quick buttons
+        document.querySelectorAll('.quick-buttons').forEach(group => {
+            group.querySelectorAll('.quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    group.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+        });
+
+        // Filter chips
+        document.querySelectorAll('.filter-chips .chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM AI Chat - Claude Opus 4.5</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0d0d0d;
+            color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .header-info h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .header-info span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .settings-btn {
+            margin-left: auto;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            display: none;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 14px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .settings-panel.open { display: block; }
+
+        .settings-row {
+            margin-bottom: 16px;
+        }
+
+        .settings-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 12px;
+            background: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            color: #f5f5f5;
+            font-size: 14px;
+        }
+
+        .settings-input:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+
+        .api-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            margin-top: 8px;
+        }
+
+        .api-status.ok { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .api-status.error { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-assistant {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-user .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: none;
+            max-width: 80%;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .message-text code {
+            background: #252525;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .message-text pre {
+            background: #252525;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Function Call */
+        .function-call {
+            background: #252525;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .function-name {
+            color: #f59e0b;
+            font-weight: 500;
+        }
+
+        .function-result {
+            color: #22c55e;
+            margin-top: 6px;
+        }
+
+        /* Typing */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Input */
+        .input-area {
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 14px 18px;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            color: #f5f5f5;
+            font-size: 15px;
+            resize: none;
+            height: 48px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Quick prompts */
+        .quick-prompts {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 8px 14px;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 20px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .quick-btn:hover {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+
+        /* Data table in responses */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 13px;
+            background: #252525;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .data-table th {
+            background: #2a2a2a;
+            padding: 10px 12px;
+            text-align: left;
+            color: #888;
+            font-weight: 500;
+        }
+
+        .data-table td {
+            padding: 8px 12px;
+            border-top: 1px solid #333;
+        }
+
+        .data-table .highlight { color: #f59e0b; font-weight: 600; }
+        .data-table .positive { color: #22c55e; }
+        .data-table .negative { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏗️</div>
+            <div class="header-info">
+                <h1>FM AI Assistant</h1>
+                <span>Проект: Касаткина • Claude Opus 4.5</span>
+            </div>
+            <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-row">
+                <label class="settings-label">Anthropic API Key</label>
+                <input type="password" class="settings-input" id="apiKey"
+                       placeholder="sk-ant-api03-...">
+                <div class="api-status" id="apiStatus">Введите API ключ</div>
+            </div>
+            <div class="settings-row">
+                <label class="settings-label">Модель</label>
+                <select class="settings-input" id="modelSelect">
+                    <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
+                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="message message-assistant">
+                <div class="avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-text">Привет! Я AI-ассистент финансовой модели проекта <strong>Касаткина</strong>.
+
+Могу помочь с:
+• Анализом показателей (выручка, прибыль, IRR)
+• Объяснением формул и расчётов
+• Поиском данных по статьям и периодам
+• Сравнением план/факт
+
+Задайте вопрос или выберите быстрый запрос ниже.</div>
+                    <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" class="chat-input" id="chatInput"
+                       placeholder="Введите вопрос..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+            </div>
+            <div class="quick-prompts">
+                <button class="quick-btn" onclick="quickAsk('Покажи основные показатели проекта')">📊 Основные показатели</button>
+                <button class="quick-btn" onclick="quickAsk('Какая выручка и прибыль?')">💰 Выручка и прибыль</button>
+                <button class="quick-btn" onclick="quickAsk('Объясни формулу ячейки CF1!Q65')">🔢 Объяснить формулу</button>
+                <button class="quick-btn" onclick="quickAsk('Покажи затраты по статье 5401')">📋 Затраты по статье</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Settings
+        let apiKey = localStorage.getItem('anthropic_api_key') || '';
+        let model = localStorage.getItem('fm_model') || 'claude-opus-4-5-20251101';
+        let isProcessing = false;
+
+        // System prompt with financial model knowledge
+        const SYSTEM_PROMPT = `Ты - AI-ассистент финансовой модели девелоперского проекта "Касаткина".
+
+КОНТЕКСТ ПРОЕКТА:
+- Проект: ЖК Касаткина, ул. Касаткина, вл. 7
+- 2 очереди строительства
+- Общая площадь: 178 143 м²
+- Полезная площадь: 165 673 м²
+- НПС (площадь продаж): 116 376 м²
+
+КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ:
+- Выручка: 78 746 млн ₽
+- Прибыль: 9 346 млн ₽
+- IRR проекта: 17.5%
+- IRR инвестора: 63.3%
+- Маржа после Н/О: 11.9%
+
+СТРУКТУРА ЛИСТОВ МОДЕЛИ:
+- DB, DB1, DB2 - сводные показатели (проект, очередь 1, очередь 2)
+- CF, CF1, CF2 - Cash Flow по кварталам
+- TS1, TS2 - графики продаж
+- DETAILS - детализация затрат по договорам и работам
+- FACT - фактические платежи из 1С
+- CONTRACT - справочник договоров
+
+СТАТЬИ ЗАТРАТ (примеры):
+- 5401 - СМР подготовительный (вынос сетей, подготовка площадки)
+- 5202 - Проектирование (ППТ, РД, мастер-план)
+- 4107 - Юридические услуги
+- 2201 - Реализация квартир
+
+ФОРМУЛЫ:
+- CF агрегирует данные из DETAILS через SUMIFS
+- Например: =SUMIFS(DETAILS!V$288:V$317,DETAILS!$C$288:$C$317,'CF1'!$D$2)/10^6
+  Это сумма СМР жилье из DETAILS для очереди 1
+
+ИНСТРУКЦИИ:
+1. Отвечай на русском языке
+2. Используй доступные функции для получения точных данных
+3. При цитировании чисел указывай источник (лист!ячейка)
+4. Если не уверен - честно скажи и объясни что нужно проверить
+5. Форматируй числа с разделителями тысяч для читаемости`;
+
+        // Tools definition for Claude
+        const TOOLS = [
+            {
+                name: "get_summary",
+                description: "Получить сводку проекта с ключевыми показателями: выручка, прибыль, IRR, площади",
+                input_schema: {
+                    type: "object",
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: "get_cell",
+                description: "Получить значение и формулу конкретной ячейки",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        sheet: {
+                            type: "string",
+                            description: "Имя листа: DB, DB1, DB2, CF, CF1, CF2, TS1, TS2, DETAILS, FACT"
+                        },
+                        cell: {
+                            type: "string",
+                            description: "Адрес ячейки, например A1, B5, Q65"
+                        }
+                    },
+                    required: ["sheet", "cell"]
+                }
+            },
+            {
+                name: "explain_formula",
+                description: "Получить формулу ячейки и её зависимости для объяснения",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        sheet: { type: "string", description: "Имя листа" },
+                        cell: { type: "string", description: "Адрес ячейки" }
+                    },
+                    required: ["sheet", "cell"]
+                }
+            },
+            {
+                name: "search_cells",
+                description: "Поиск ячеек по тексту значения или формулы",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        query: { type: "string", description: "Текст для поиска" },
+                        sheet: { type: "string", description: "Опционально: ограничить поиск листом" }
+                    },
+                    required: ["query"]
+                }
+            },
+            {
+                name: "get_cost_breakdown",
+                description: "Получить детализацию затрат по коду статьи из листа DETAILS",
+                input_schema: {
+                    type: "object",
+                    properties: {
+                        статья: { type: "string", description: "Код статьи: 5401, 5202, 4107 и т.д." },
+                        очередь: { type: "integer", description: "Опционально: 1 или 2" }
+                    },
+                    required: ["статья"]
+                }
+            }
+        ];
+
+        // FM Data (loaded from JSON)
+        let FM_DATA = null;
+        let FM_SUMMARY = null;
+
+        // Load FM data
+        async function loadFMData() {
+            try {
+                const [fullRes, summaryRes] = await Promise.all([
+                    fetch('../fm_kasatkina_full.json'),
+                    fetch('../fm_kasatkina_summary.json')
+                ]);
+                FM_DATA = await fullRes.json();
+                FM_SUMMARY = await summaryRes.json();
+                console.log('FM data loaded:', FM_DATA.meta);
+            } catch (e) {
+                console.error('Failed to load FM data:', e);
+                addSystemMessage('⚠️ Не удалось загрузить данные модели. Проверьте наличие файлов fm_kasatkina_full.json и fm_kasatkina_summary.json');
+            }
+        }
+
+        // Tool implementations
+        function executeToolCall(name, input) {
+            if (!FM_DATA) return { error: "FM data not loaded" };
+
+            switch (name) {
+                case 'get_summary':
+                    return FM_SUMMARY;
+
+                case 'get_cell': {
+                    const { sheet, cell } = input;
+                    if (!FM_DATA.sheets[sheet]) {
+                        return { error: `Sheet '${sheet}' not found` };
+                    }
+                    const cellData = FM_DATA.sheets[sheet].cells[cell.toUpperCase()];
+                    if (!cellData) {
+                        return { error: `Cell ${cell} not found in ${sheet}` };
+                    }
+                    return { sheet, cell: cell.toUpperCase(), ...cellData };
+                }
+
+                case 'explain_formula': {
+                    const { sheet, cell } = input;
+                    if (!FM_DATA.sheets[sheet]) {
+                        return { error: `Sheet '${sheet}' not found` };
+                    }
+                    const cellData = FM_DATA.sheets[sheet].cells[cell.toUpperCase()];
+                    if (!cellData) {
+                        return { error: `Cell ${cell} not found in ${sheet}` };
+                    }
+                    if (!cellData.formula) {
+                        return {
+                            sheet, cell: cell.toUpperCase(),
+                            value: cellData.value,
+                            note: "Это статическое значение, не формула"
+                        };
+                    }
+                    return {
+                        sheet,
+                        cell: cell.toUpperCase(),
+                        formula: cellData.formula,
+                        value: cellData.value
+                    };
+                }
+
+                case 'search_cells': {
+                    const { query, sheet } = input;
+                    const results = [];
+                    const sheets = sheet ? [sheet] : Object.keys(FM_DATA.sheets);
+                    const queryLower = query.toLowerCase();
+
+                    for (const sheetName of sheets) {
+                        if (!FM_DATA.sheets[sheetName]) continue;
+                        const cells = FM_DATA.sheets[sheetName].cells;
+                        for (const [cellRef, data] of Object.entries(cells)) {
+                            const valStr = String(data.value || '').toLowerCase();
+                            const formula = (data.formula || '').toLowerCase();
+                            if (valStr.includes(queryLower) || formula.includes(queryLower)) {
+                                results.push({ sheet: sheetName, cell: cellRef, ...data });
+                                if (results.length >= 20) break;
+                            }
+                        }
+                        if (results.length >= 20) break;
+                    }
+                    return { query, count: results.length, results };
+                }
+
+                case 'get_cost_breakdown': {
+                    const { статья, очередь } = input;
+                    const results = [];
+                    const cells = FM_DATA.sheets['DETAILS']?.cells || {};
+
+                    for (let row = 5; row < 420; row++) {
+                        const bCell = cells[`B${row}`];
+                        if (bCell && String(bCell.value).includes(статья)) {
+                            const rowData = {
+                                row,
+                                статья: bCell.value,
+                                очередь: cells[`C${row}`]?.value,
+                                содержание: cells[`D${row}`]?.value,
+                                организация: cells[`E${row}`]?.value
+                            };
+
+                            if (очередь && rowData.очередь !== очередь) continue;
+                            results.push(rowData);
+                        }
+                    }
+                    return { статья, очередь, count: results.length, items: results.slice(0, 30) };
+                }
+
+                default:
+                    return { error: `Unknown tool: ${name}` };
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('apiKey').value = apiKey;
+            document.getElementById('modelSelect').value = model;
+            updateApiStatus();
+            loadFMData();
+        });
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+        }
+
+        function updateApiStatus() {
+            const status = document.getElementById('apiStatus');
+            apiKey = document.getElementById('apiKey').value;
+            model = document.getElementById('modelSelect').value;
+
+            localStorage.setItem('anthropic_api_key', apiKey);
+            localStorage.setItem('fm_model', model);
+
+            if (apiKey && apiKey.startsWith('sk-ant-')) {
+                status.className = 'api-status ok';
+                status.textContent = '✓ API ключ установлен';
+            } else {
+                status.className = 'api-status error';
+                status.textContent = '✗ Введите корректный API ключ';
+            }
+        }
+
+        document.getElementById('apiKey').addEventListener('input', updateApiStatus);
+        document.getElementById('modelSelect').addEventListener('change', updateApiStatus);
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function quickAsk(text) {
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        function addMessage(role, content, toolCalls = null) {
+            const div = document.createElement('div');
+            div.className = `message message-${role}`;
+
+            const time = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+
+            if (role === 'assistant') {
+                let toolHtml = '';
+                if (toolCalls) {
+                    toolHtml = toolCalls.map(tc => `
+                        <div class="function-call">
+                            <span class="function-name">📞 ${tc.name}</span>
+                            <div class="function-result">→ ${JSON.stringify(tc.result).slice(0, 200)}...</div>
+                        </div>
+                    `).join('');
+                }
+
+                div.innerHTML = `
+                    <div class="avatar">🤖</div>
+                    <div class="message-content">
+                        ${toolHtml}
+                        <div class="message-text">${formatMarkdown(content)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-text">${escapeHtml(content)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>`;
+            }
+
+            document.getElementById('messages').appendChild(div);
+            scrollToBottom();
+        }
+
+        function addTyping() {
+            const div = document.createElement('div');
+            div.className = 'message message-assistant';
+            div.id = 'typing';
+            div.innerHTML = `
+                <div class="avatar">🤖</div>
+                <div class="message-content">
+                    <div class="typing"><span></span><span></span><span></span></div>
+                </div>`;
+            document.getElementById('messages').appendChild(div);
+            scrollToBottom();
+        }
+
+        function removeTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+
+        function addSystemMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message message-assistant';
+            div.innerHTML = `
+                <div class="avatar" style="background: #3a3a3a;">ℹ️</div>
+                <div class="message-content" style="border-left-color: #666;">
+                    <div class="message-text">${text}</div>
+                </div>`;
+            document.getElementById('messages').appendChild(div);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function formatMarkdown(text) {
+            return escapeHtml(text)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || isProcessing) return;
+
+            if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+                addSystemMessage('⚠️ Пожалуйста, введите корректный Anthropic API ключ в настройках');
+                return;
+            }
+
+            // Add user message
+            addMessage('user', text);
+            input.value = '';
+
+            // Show typing
+            isProcessing = true;
+            document.getElementById('sendBtn').disabled = true;
+            addTyping();
+
+            try {
+                // Build messages
+                const messages = [{
+                    role: 'user',
+                    content: text
+                }];
+
+                // Call Claude API with tools
+                let response = await callClaudeAPI(messages);
+                let toolResults = [];
+
+                // Handle tool use loop
+                while (response.stop_reason === 'tool_use') {
+                    const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
+
+                    for (const toolUse of toolUseBlocks) {
+                        const result = executeToolCall(toolUse.name, toolUse.input);
+                        toolResults.push({
+                            name: toolUse.name,
+                            result: result
+                        });
+
+                        // Add tool result to messages
+                        messages.push({
+                            role: 'assistant',
+                            content: response.content
+                        });
+                        messages.push({
+                            role: 'user',
+                            content: [{
+                                type: 'tool_result',
+                                tool_use_id: toolUse.id,
+                                content: JSON.stringify(result)
+                            }]
+                        });
+                    }
+
+                    // Continue conversation
+                    response = await callClaudeAPI(messages);
+                }
+
+                // Extract text response
+                const textContent = response.content
+                    .filter(b => b.type === 'text')
+                    .map(b => b.text)
+                    .join('\n');
+
+                removeTyping();
+                addMessage('assistant', textContent, toolResults.length > 0 ? toolResults : null);
+
+            } catch (error) {
+                removeTyping();
+                addSystemMessage(`❌ Ошибка API: ${error.message}`);
+            } finally {
+                isProcessing = false;
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+
+        async function callClaudeAPI(messages) {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: model,
+                    max_tokens: 4096,
+                    system: SYSTEM_PROMPT,
+                    tools: TOOLS,
+                    messages: messages
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || `HTTP ${response.status}`);
+            }
+
+            return response.json();
+        }
+    </script>
+</body>
+</html>

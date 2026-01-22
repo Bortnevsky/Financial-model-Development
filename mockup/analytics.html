@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM AI - Аналитика с пресетом</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .header-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header-info span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-assistant {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-user .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid #f59e0b;
+            max-width: 80%;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Таблица ФЭП */
+        .fep-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+            background: #252525;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .fep-table th {
+            text-align: left;
+            padding: 12px 14px;
+            background: #2a2a2a;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .fep-table th:not(:first-child) {
+            text-align: right;
+        }
+
+        .fep-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .fep-table td:not(:first-child) {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .fep-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .fep-table tr:hover {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .fep-table .highlight {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .fep-table .positive {
+            color: #22c55e;
+        }
+
+        .fep-table .negative {
+            color: #ef4444;
+        }
+
+        /* Заголовок таблицы */
+        .table-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .table-header-icon {
+            font-size: 18px;
+        }
+
+        /* Кнопки */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #a0a0a0;
+        }
+
+        .action-btn.secondary:hover {
+            border-color: #f59e0b;
+            color: #f5f5f5;
+        }
+
+        /* Инпут */
+        .chat-input-container {
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+            margin-top: auto;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #f5f5f5;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #f59e0b;
+        }
+
+        .chat-input::placeholder {
+            color: #666;
+        }
+
+        .mic-btn, .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mic-btn {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            color: #000;
+        }
+
+        /* Typing */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Вывод */
+        .conclusion {
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .conclusion strong {
+            color: #f59e0b;
+        }
+
+        /* PDF Badge */
+        .pdf-saved {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <button class="back-btn" onclick="window.location.href='startup.html'">&#8592;</button>
+            <div class="header-info">
+                <h1>&#129302; AI Финансовый ассистент</h1>
+                <span>Аналитика • Тушино</span>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages added by JS -->
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" placeholder="Введите сообщение..." id="chatInput">
+                <button class="mic-btn">&#127908;</button>
+                <button class="send-btn" onclick="sendMessage()">&#10148;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        let step = 0;
+
+        const conversation = [
+            {
+                type: 'user',
+                content: 'Покажи мне по Тушино только 2 и 3 очередь. Основные показатели, ну ты знаешь, как я люблю табличку'
+            },
+            {
+                type: 'assistant',
+                content: `Да, конечно! Твоя любимая табличка по ФЭП &#128522;
+
+<div class="table-header">
+    <span class="table-header-icon">&#128202;</span>
+    Тушино — очереди 2 и 3
+</div>
+
+<table class="fep-table">
+    <thead>
+        <tr>
+            <th>Показатель</th>
+            <th>Очередь 2</th>
+            <th>Очередь 3</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Продаваемая площадь</td>
+            <td>28 500 м²</td>
+            <td>34 200 м²</td>
+        </tr>
+        <tr>
+            <td>Выручка</td>
+            <td>5.7 млрд</td>
+            <td>6.8 млрд</td>
+        </tr>
+        <tr>
+            <td>Себестоимость</td>
+            <td>4.1 млрд</td>
+            <td>4.9 млрд</td>
+        </tr>
+        <tr>
+            <td>Валовая маржа</td>
+            <td class="highlight">1.6 млрд</td>
+            <td class="highlight">1.9 млрд</td>
+        </tr>
+        <tr>
+            <td>Маржинальность</td>
+            <td>28%</td>
+            <td>28%</td>
+        </tr>
+        <tr>
+            <td>IRR</td>
+            <td class="highlight">24%</td>
+            <td class="highlight">22%</td>
+        </tr>
+        <tr>
+            <td>NPV (15%)</td>
+            <td>890 млн</td>
+            <td>1.1 млрд</td>
+        </tr>
+        <tr>
+            <td>Срок окупаемости</td>
+            <td>2.1 года</td>
+            <td>2.4 года</td>
+        </tr>
+    </tbody>
+</table>`,
+                buttons: [
+                    { text: '&#128196; В PDF', action: 'pdf' },
+                    { text: '&#128202; Подробнее', action: 'details' },
+                    { text: 'Сравнить со входом', action: 'compare' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'Можешь в потоки по земле поставить строчку — покупка проекта сторонним инвестором. Поставь 2 млрд и посмотрим какие станут показатели'
+            },
+            {
+                type: 'assistant',
+                content: `Добавил строку "Покупка инвестором" — <strong>2 млрд &#8381;</strong><br>
+Пересчитал модель. Смотри результат:
+
+<table class="fep-table">
+    <thead>
+        <tr>
+            <th>Показатель</th>
+            <th>Было</th>
+            <th>С инвестором</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>IRR проекта</td>
+            <td>24%</td>
+            <td class="positive">38%</td>
+        </tr>
+        <tr>
+            <td>NPV для продавца</td>
+            <td>1.9 млрд</td>
+            <td class="positive">3.4 млрд</td>
+        </tr>
+        <tr>
+            <td>IRR для покупателя</td>
+            <td>—</td>
+            <td class="highlight">24%</td>
+        </tr>
+        <tr>
+            <td>NPV для покупателя</td>
+            <td>—</td>
+            <td class="highlight">1.9 млрд</td>
+        </tr>
+        <tr>
+            <td>Чистая прибыль</td>
+            <td>3.5 млрд</td>
+            <td class="positive">3.7 млрд *</td>
+        </tr>
+    </tbody>
+</table>
+<small style="color: #888;">* с учётом выхода в 2 млрд</small>
+
+<div class="conclusion">
+    При продаже за <strong>2 млрд</strong> единоразово — для покупателя IRR <strong>24%</strong>, NPV <strong>1.9 млрд</strong>.<br>
+    Сделка выгодна обеим сторонам.
+</div>`,
+                buttons: [
+                    { text: '&#128196; Сохранить в PDF', primary: true, action: 'save_pdf' },
+                    { text: 'Кинуть в чат', action: 'share' },
+                    { text: 'Новый расчёт', action: 'new_calc' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'Сохрани в PDF и кинь в чат'
+            },
+            {
+                type: 'assistant',
+                content: `<div class="pdf-saved">
+    &#10004; PDF сохранён: Тушино_инвестор_2млрд_21.01.2026.pdf
+</div>
+
+Готово! Отправил файл в общий чат проекта "Тушино".
+
+Что-то ещё посчитать?`,
+                buttons: [
+                    { text: 'Другой сценарий', action: 'new_scenario' },
+                    { text: 'Сравнить со входом', action: 'compare_entry' },
+                    { text: 'На главную', action: 'home' }
+                ]
+            }
+        ];
+
+        function addMessage(msg) {
+            const div = document.createElement('div');
+            div.className = `message message-${msg.type}`;
+
+            let html = '';
+            if (msg.type === 'assistant') {
+                html = `
+                    <div class="avatar">&#129302;</div>
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        ${msg.buttons ? `
+                            <div class="action-buttons">
+                                ${msg.buttons.map(b => `
+                                    <button class="action-btn ${b.primary ? 'primary' : 'secondary'}"
+                                            onclick="handleAction('${b.action}')">${b.text}</button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            } else {
+                html = `
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            }
+
+            div.innerHTML = html;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message message-assistant';
+            div.id = 'typing';
+            div.innerHTML = `
+                <div class="avatar">&#129302;</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            const t = document.getElementById('typing');
+            if (t) t.remove();
+        }
+
+        function handleAction(action) {
+            if (action === 'home') {
+                window.location.href = 'startup.html';
+                return;
+            }
+            if (action === 'compare_entry') {
+                window.location.href = 'comparison.html';
+                return;
+            }
+
+            if (step < conversation.length - 1) {
+                step++;
+                addMessage(conversation[step]);
+                if (conversation[step].type === 'user' && step < conversation.length - 1) {
+                    step++;
+                    setTimeout(() => {
+                        showTyping();
+                        setTimeout(() => {
+                            hideTyping();
+                            addMessage(conversation[step]);
+                        }, 1200);
+                    }, 300);
+                }
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage({ type: 'user', content: text });
+            input.value = '';
+
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    step = Math.min(step + 2, conversation.length - 1);
+                    if (conversation[step]) {
+                        addMessage(conversation[step]);
+                    }
+                }, 1500);
+            }, 300);
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Start
+        setTimeout(() => {
+            addMessage(conversation[0]);
+            step = 1;
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    addMessage(conversation[1]);
+                }, 1500);
+            }, 500);
+        }, 300);
+    </script>
+</body>
+</html>
