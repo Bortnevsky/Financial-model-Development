@@ -1,0 +1,147 @@
+{
+  "name": "fm_query",
+  "description": "Query financial model data for project Касаткина. Returns values and formulas from the Excel model.",
+  "tools": [
+    {
+      "name": "get_cell",
+      "description": "Get value and formula for a specific cell",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sheet": {
+            "type": "string",
+            "description": "Sheet name: МАСТЕР ПЛАН, RESUME, DB, DB1, DB2, CF, CF1, CF2, TS1, TS2, DETAILS, FACT, БИТ, CONTRACT, ПРОДАЖИ, СОЦИАЛКА"
+          },
+          "cell": {
+            "type": "string",
+            "description": "Cell reference like A1, B5, CF1"
+          }
+        },
+        "required": ["sheet", "cell"]
+      }
+    },
+    {
+      "name": "get_range",
+      "description": "Get values for a range of cells",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sheet": {
+            "type": "string",
+            "description": "Sheet name"
+          },
+          "start_cell": {
+            "type": "string",
+            "description": "Starting cell like A1"
+          },
+          "end_cell": {
+            "type": "string",
+            "description": "Ending cell like D10"
+          }
+        },
+        "required": ["sheet", "start_cell", "end_cell"]
+      }
+    },
+    {
+      "name": "get_summary",
+      "description": "Get project summary with key metrics: выручка, прибыль, IRR, площади",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "search_cells",
+      "description": "Search for cells containing specific text or value",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Text to search for in cell values"
+          },
+          "sheet": {
+            "type": "string",
+            "description": "Optional: limit search to specific sheet"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "explain_formula",
+      "description": "Get formula and explain what it calculates",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sheet": {
+            "type": "string",
+            "description": "Sheet name"
+          },
+          "cell": {
+            "type": "string",
+            "description": "Cell reference"
+          }
+        },
+        "required": ["sheet", "cell"]
+      }
+    },
+    {
+      "name": "get_cashflow_period",
+      "description": "Get cash flow data for a specific period",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Period like 1Q2025, 2Q2026"
+          },
+          "очередь": {
+            "type": "integer",
+            "description": "1 or 2 for project phase"
+          }
+        },
+        "required": ["period"]
+      }
+    },
+    {
+      "name": "get_cost_breakdown",
+      "description": "Get breakdown of costs by статья (cost category)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "статья": {
+            "type": "string",
+            "description": "Cost code like 5401 (СМР подготовительный), 5202 (Проектирование), 4107 (Юридические услуги)"
+          },
+          "очередь": {
+            "type": "integer",
+            "description": "Optional: 1 or 2 for specific phase"
+          }
+        },
+        "required": ["статья"]
+      }
+    },
+    {
+      "name": "get_fact_payments",
+      "description": "Get actual (fact) payments from FACT sheet",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Optional: period like 1Q2024"
+          },
+          "контрагент": {
+            "type": "string",
+            "description": "Optional: contractor name"
+          },
+          "статья": {
+            "type": "string",
+            "description": "Optional: cost code"
+          }
+        }
+      }
+    }
+  ]
+}
