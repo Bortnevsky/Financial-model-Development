@@ -99,29 +99,18 @@ st.markdown("""
         border-bottom: 1px solid var(--border);
     }
 
-    /* Section headers like Excel */
+    /* Section headers - single consistent style */
     .section-header {
-        background: linear-gradient(90deg, var(--accent) 0%, #1e88e5 100%);
-        color: white !important;
+        background: var(--bg-card);
+        border-left: 3px solid var(--accent);
+        color: var(--text-primary) !important;
         padding: 10px 16px;
         font-weight: 600;
-        font-size: 14px;
-        border-radius: 6px 6px 0 0;
-        margin-top: 20px;
-    }
-
-    .section-header-gold {
-        background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
-        color: #1a1a1a !important;
-    }
-
-    .section-header-purple {
-        background: linear-gradient(90deg, #7c4dff 0%, #536dfe 100%);
-    }
-
-    .section-header-green {
-        background: linear-gradient(90deg, #00c853 0%, #69f0ae 100%);
-        color: #1a1a1a !important;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 16px;
+        margin-bottom: 0;
     }
 
     /* Data tables */
@@ -591,7 +580,7 @@ if page == "📊 Dashboard":
         st.dataframe(df_tep, use_container_width=True, hide_index=True, height=320)
 
         # ИНВЕСТИЦИИ
-        st.markdown('<div class="section-header section-header-gold">ИНВЕСТИЦИИ</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">ИНВЕСТИЦИИ</div>', unsafe_allow_html=True)
         inv_data = [
             ["ВХОД", "807", "18 279", "28 870", "3 841"],
             ["ЗЕМЕЛЬНО-ПРАВОВЫЕ", "", "23 436", "37 016", "4 925"],
@@ -609,7 +598,7 @@ if page == "📊 Dashboard":
 
     with right_col:
         # ДОХОДЫ
-        st.markdown('<div class="section-header section-header-green">ДОХОДЫ</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">ДОХОДЫ</div>', unsafe_allow_html=True)
         rev_data = [
             ["НАЗЕМНАЯ ЧАСТЬ", "511", "", ""],
             ["КВАРТИРЫ", "523", "630", "69 491"],
@@ -621,7 +610,7 @@ if page == "📊 Dashboard":
         st.dataframe(df_rev, use_container_width=True, hide_index=True, height=220)
 
         # СРОКИ
-        st.markdown('<div class="section-header section-header-purple">СРОКИ</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">СРОКИ</div>', unsafe_allow_html=True)
         time_data = [
             ["НАЧАЛО РАСЧЕТОВ", "01.04.2023"],
             ["НАЧАЛО ПРОЕКТА", "01.04.2025"],
