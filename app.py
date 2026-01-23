@@ -806,7 +806,14 @@ elif page == "💬 AI Ассистент":
         with col3:
             eleven_key = st.text_input("11Labs API Key", type="password", placeholder="...", key="eleven_key")
         with col4:
-            voice = st.selectbox("Голос", ["Rachel", "Adam", "Antoni"], key="eleven_voice")
+            eleven_model = st.selectbox("11Labs модель", [
+                "eleven_flash_v2_5",      # Fastest, 75ms latency, for real-time
+                "eleven_v3",              # Most expressive with emotions
+                "eleven_multilingual_v2", # High quality multilingual
+                "eleven_turbo_v2_5",      # Balance of quality and speed
+            ], key="eleven_model")
+
+        voice = st.selectbox("Голос", ["Rachel", "Adam", "Antoni", "Bella", "Josh"], key="eleven_voice")
 
     st.markdown("---")
 
