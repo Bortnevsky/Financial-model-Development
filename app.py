@@ -794,8 +794,8 @@ elif page == "💬 AI Ассистент":
             api_key = st.text_input("Claude API Key", type="password", placeholder="sk-ant-...", key="claude_api_key")
         with col2:
             model = st.selectbox("Модель", [
-                "claude-sonnet-4-5-20250514",
-                "claude-opus-4-5-20250514",
+                "claude-sonnet-4-5-20250929",
+                "claude-opus-4-5-20251101",
                 "claude-3-5-sonnet-20241022",
                 "claude-3-5-haiku-20241022"
             ], key="claude_model")
