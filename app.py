@@ -493,21 +493,22 @@ def load_model_context_from_db():
     session = get_session()
     try:
         # Get key indicators with their values
-        indicators = session.query(Indicator).filter_by(version_id=1).all()
+        indicators = session.query(Indicator).limit(100).all()
 
         context_lines = ["Данные финансовой модели проекта 'Касаткина 7':"]
 
-        for ind in indicators[:100]:  # Limit to avoid huge context
-            if ind.label and ind.label.strip():
-                # Get value for this indicator
+        for ind in indicators:
+            if ind.name and ind.name.strip():
+                # Get value for this indicator (col 3 is usually total)
                 cell = session.query(CellValue).filter_by(
                     version_id=1,
                     sheet=ind.sheet,
-                    row_num=ind.row_num
+                    row_num=ind.row_num,
+                    col_num=3
                 ).first()
 
                 if cell and cell.final_value is not None:
-                    context_lines.append(f"- {ind.label}: {cell.final_value}")
+                    context_lines.append(f"- {ind.name}: {cell.final_value}")
 
         return "\n".join(context_lines)
     except Exception as e:
@@ -520,10 +521,9 @@ def search_indicator_value(query: str) -> str:
     """Search for indicator value by name (for AI tool use)"""
     session = get_session()
     try:
-        # Search indicators by label
+        # Search indicators by name
         indicators = session.query(Indicator).filter(
-            Indicator.version_id == 1,
-            Indicator.label.ilike(f"%{query}%")
+            Indicator.name.ilike(f"%{query}%")
         ).limit(10).all()
 
         if not indicators:
@@ -539,7 +539,7 @@ def search_indicator_value(query: str) -> str:
             ).order_by(CellValue.col_num).all()
 
             values = [str(c.final_value) for c in cells if c.final_value is not None]
-            results.append(f"{ind.label} ({ind.sheet}): {', '.join(values[:5])}")
+            results.append(f"{ind.name} ({ind.sheet}): {', '.join(values[:5])}")
 
         return "\n".join(results)
     except Exception as e:
@@ -559,9 +559,9 @@ def get_sheet_summary(sheet_name: str) -> str:
         if not cells:
             return f"Лист '{sheet_name}' не найден или пуст"
 
-        # Get indicators for this sheet
+        # Get indicators for this sheet (no version_id filter)
         indicators = session.query(Indicator).filter_by(
-            version_id=1, sheet=sheet_name
+            sheet=sheet_name
         ).all()
 
         result = [f"Лист {sheet_name}: {len(cells)} ячеек, {len(indicators)} показателей"]
@@ -571,8 +571,8 @@ def get_sheet_summary(sheet_name: str) -> str:
                 version_id=1, sheet=sheet_name, row_num=ind.row_num, col_num=3
             ).first()
             val = cell.final_value if cell else ""
-            if ind.label:
-                result.append(f"  - {ind.label}: {val}")
+            if ind.name:
+                result.append(f"  - {ind.name}: {val}")
 
         return "\n".join(result)
     except Exception as e:
