@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM AI - Разнесение факта</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .header-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header-info span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-assistant {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border-left: 3px solid #3a3a3a;
+        }
+
+        .message-assistant .message-content {
+            border-left-color: #f59e0b;
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-user .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid #f59e0b;
+            max-width: 80%;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Документ */
+        .document-card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid #3a3a3a;
+        }
+
+        .document-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .document-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .document-icon {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+
+        .document-label {
+            color: #888;
+            font-size: 13px;
+            min-width: 100px;
+        }
+
+        .document-value {
+            font-size: 14px;
+            color: #f5f5f5;
+            font-weight: 500;
+        }
+
+        .document-value.amount {
+            color: #f59e0b;
+            font-size: 16px;
+        }
+
+        /* Предложение по разнесению */
+        .allocation-proposal {
+            background: #252525;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .allocation-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .allocation-label {
+            color: #888;
+            min-width: 80px;
+        }
+
+        .allocation-value {
+            color: #f5f5f5;
+        }
+
+        .allocation-path {
+            color: #f59e0b;
+            font-size: 13px;
+        }
+
+        /* Кнопки действий */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #a0a0a0;
+        }
+
+        .action-btn.secondary:hover {
+            border-color: #f59e0b;
+            color: #f5f5f5;
+        }
+
+        /* Таблица бюджета */
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .budget-table th {
+            text-align: left;
+            padding: 10px 12px;
+            background: #252525;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .budget-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .budget-table tr:hover {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .budget-table .indent-1 {
+            padding-left: 28px;
+        }
+
+        .budget-table .indent-2 {
+            padding-left: 44px;
+        }
+
+        .budget-table .highlight {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .budget-table .amount {
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+
+        .budget-table .percent {
+            color: #888;
+            text-align: right;
+        }
+
+        .budget-table .changed {
+            color: #f59e0b;
+        }
+
+        /* Статус */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .status-badge.warning {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+        }
+
+        /* Инпут чата */
+        .chat-input-container {
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+            margin-top: auto;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #f5f5f5;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #f59e0b;
+        }
+
+        .chat-input::placeholder {
+            color: #666;
+        }
+
+        .mic-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            color: #f59e0b;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Модальное окно уведомления */
+        .notification-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 100px;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .notification-card {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .notification-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .notification-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .notification-text {
+            color: #a0a0a0;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .notification-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .notification-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .notification-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+        }
+
+        .notification-btn.secondary {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #a0a0a0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification Modal -->
+    <div class="notification-modal" id="notificationModal">
+        <div class="notification-card">
+            <div class="notification-icon">&#128229;</div>
+            <div class="notification-title">Новые документы</div>
+            <div class="notification-text">
+                Катя, привет! Тут пришла первичка — факт.<br>
+                Давай разнесём?
+            </div>
+            <div class="notification-buttons">
+                <button class="notification-btn primary" onclick="startProcessing()">Давай</button>
+                <button class="notification-btn secondary" onclick="dismissNotification()">Позже</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <button class="back-btn" onclick="window.location.href='startup.html'">&#8592;</button>
+            <div class="header-info">
+                <h1>&#129302; AI Финансовый ассистент</h1>
+                <span>Разнесение факта • Касаткина</span>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here -->
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" placeholder="Введите сообщение..." id="chatInput">
+                <button class="mic-btn">&#127908;</button>
+                <button class="send-btn" onclick="sendMessage()">&#10148;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        let currentStep = 0;
+
+        const conversation = [
+            {
+                type: 'assistant',
+                content: `Слушай, тут договор на услуги по дизайну офиса продаж для проекта Касаткина.
+
+<div class="document-card">
+    <div class="document-row">
+        <span class="document-icon">&#128196;</span>
+        <span class="document-label">Документ:</span>
+        <span class="document-value">Платёжное поручение #1247</span>
+    </div>
+    <div class="document-row">
+        <span class="document-icon">&#128176;</span>
+        <span class="document-label">Сумма:</span>
+        <span class="document-value amount">3 000 000 &#8381;</span>
+    </div>
+    <div class="document-row">
+        <span class="document-icon">&#128197;</span>
+        <span class="document-label">Дата:</span>
+        <span class="document-value">21.01.2026</span>
+    </div>
+    <div class="document-row">
+        <span class="document-icon">&#127970;</span>
+        <span class="document-label">Контрагент:</span>
+        <span class="document-value">ООО "Дизайн Студио"</span>
+    </div>
+</div>
+
+Предлагаю разнести так:
+
+<div class="allocation-proposal">
+    <div class="allocation-row">
+        <span class="allocation-label">Проект:</span>
+        <span class="allocation-value">Касаткина</span>
+    </div>
+    <div class="allocation-row">
+        <span class="allocation-label">Очереди:</span>
+        <span class="allocation-value">1 и 2 (пропорционально метрам)</span>
+    </div>
+    <div class="allocation-row">
+        <span class="allocation-label">Статья:</span>
+        <span class="allocation-path">Коммерческие &#8594; Маркетинг &#8594; Офис продаж</span>
+    </div>
+</div>
+
+Норм?`,
+                buttons: [
+                    { text: '✓ Да, разноси', primary: true, action: 'confirm' },
+                    { text: 'Изменить статью', action: 'change_article' },
+                    { text: 'Другой проект', action: 'change_project' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'А сколько уже по этой статье потрачено?'
+            },
+            {
+                type: 'assistant',
+                content: `Смотри, вот раскладка по бюджету:
+
+<table class="budget-table">
+    <thead>
+        <tr>
+            <th>Статья</th>
+            <th class="amount">Бюджет</th>
+            <th class="amount">Факт</th>
+            <th class="amount">Остаток</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Коммерческие расходы</td>
+            <td class="amount">100 млн</td>
+            <td class="amount">15 млн</td>
+            <td class="amount percent">85 млн (85%)</td>
+        </tr>
+        <tr>
+            <td class="indent-1">&#8627; Маркетинг</td>
+            <td class="amount">50 млн</td>
+            <td class="amount">6 млн</td>
+            <td class="amount percent">44 млн (88%)</td>
+        </tr>
+        <tr class="highlight">
+            <td class="indent-2">&#8627; Офис продаж</td>
+            <td class="amount">30 млн</td>
+            <td class="amount">4 млн</td>
+            <td class="amount changed">26 млн &#8594; 23 млн</td>
+        </tr>
+    </tbody>
+</table>
+
+С этим платежом по офису продаж будет <strong>7 млн факт</strong>.
+
+<span class="status-badge success">&#10004; Платёж в бюджете, превышения нет</span>
+
+Вносим в накопительную?`,
+                buttons: [
+                    { text: '✓ Да, вноси', primary: true, action: 'commit' },
+                    { text: 'Подробнее по статье', action: 'details' }
+                ]
+            },
+            {
+                type: 'user',
+                content: 'Да, ок, давай'
+            },
+            {
+                type: 'assistant',
+                content: `<span class="status-badge success">&#10004; Готово!</span>
+
+Платёж <strong>3 000 000 &#8381;</strong> разнесён:
+&#8226; Проект: Касаткина
+&#8226; Очереди 1 и 2 (пропорционально)
+&#8226; Статья: Коммерческие &#8594; Маркетинг &#8594; Офис продаж
+
+Транзакция #1247 записана в накопительную ведомость.
+
+Ещё 2 документа ждут обработки. Продолжим?`,
+                buttons: [
+                    { text: 'Да, следующий', primary: true, action: 'next' },
+                    { text: 'На главную', action: 'home' }
+                ]
+            }
+        ];
+
+        function addMessage(msg) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${msg.type}`;
+
+            let html = '';
+
+            if (msg.type === 'assistant') {
+                html = `
+                    <div class="avatar">&#129302;</div>
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        ${msg.buttons ? `
+                            <div class="action-buttons">
+                                ${msg.buttons.map(btn => `
+                                    <button class="action-btn ${btn.primary ? 'primary' : 'secondary'}"
+                                            onclick="handleAction('${btn.action}')">
+                                        ${btn.text}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="message-content">
+                        <div class="message-text">${msg.content}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</div>
+                    </div>
+                `;
+            }
+
+            messageDiv.innerHTML = html;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message message-assistant';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="avatar">&#129302;</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        function handleAction(action) {
+            if (action === 'confirm' || action === 'change_article' || action === 'change_project') {
+                // User asks about budget
+                addMessage(conversation[1]);
+                currentStep = 2;
+
+                setTimeout(() => {
+                    showTyping();
+                    setTimeout(() => {
+                        hideTyping();
+                        addMessage(conversation[2]);
+                        currentStep = 3;
+                    }, 1500);
+                }, 500);
+            } else if (action === 'commit' || action === 'details') {
+                addMessage(conversation[3]);
+                currentStep = 4;
+
+                setTimeout(() => {
+                    showTyping();
+                    setTimeout(() => {
+                        hideTyping();
+                        addMessage(conversation[4]);
+                    }, 1000);
+                }, 500);
+            } else if (action === 'next') {
+                alert('Загружаем следующий документ...');
+            } else if (action === 'home') {
+                window.location.href = 'startup.html';
+            }
+        }
+
+        function startProcessing() {
+            document.getElementById('notificationModal').classList.add('hidden');
+
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    addMessage(conversation[0]);
+                    currentStep = 1;
+                }, 1500);
+            }, 500);
+        }
+
+        function dismissNotification() {
+            document.getElementById('notificationModal').classList.add('hidden');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage({ type: 'user', content: text });
+            input.value = '';
+
+            // Simple response simulation
+            setTimeout(() => {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    if (currentStep < conversation.length - 1) {
+                        currentStep++;
+                        addMessage(conversation[currentStep]);
+                    } else {
+                        addMessage({
+                            type: 'assistant',
+                            content: 'Понял тебя! Что-то ещё?',
+                            buttons: [
+                                { text: 'Следующий документ', primary: true, action: 'next' },
+                                { text: 'На главную', action: 'home' }
+                            ]
+                        });
+                    }
+                }, 1500);
+            }, 500);
+        }
+
+        // Enter to send
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>

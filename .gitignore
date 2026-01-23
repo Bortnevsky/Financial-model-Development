@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 *.pyo
 .fm_config.json
+
+# Database files (generated, not committed)
+*.db
+fm_demo.db
+
+# Large model files (optional - use JSON instead)
+fm_model.json
