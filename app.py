@@ -7,6 +7,7 @@ Premium financial modeling interface
 import streamlit as st
 import pandas as pd
 import sys
+import json
 from pathlib import Path
 
 # Add project root to path
@@ -488,26 +489,192 @@ def format_number(val, suffix=""):
         return str(val)
 
 
+# Units of measurement to skip when searching for labels
+UNITS_TO_SKIP = {
+    'м²', 'м2', 'кв.м', 'кв м', 'м.кв.',
+    'руб', 'руб.', '₽', 'тыс.', 'млн.', 'млрд.',
+    'шт', 'шт.', 'ед.', 'ед',
+    '%', 'год', 'лет', 'мес', 'мес.', 'дн.', 'дней',
+    'кв.', 'п.м.', 'га', 'м', 'км'
+}
+
+
+def is_unit_of_measurement(text: str) -> bool:
+    """Check if text is a unit of measurement"""
+    if not text:
+        return False
+    text = text.strip().lower()
+    return text in UNITS_TO_SKIP or len(text) <= 2
+
+
+def find_row_label(sheet: str, row_num: int, start_col: int = 1) -> str:
+    """
+    Find label for a row by going LEFT from start_col.
+    Skips units of measurement and empty cells.
+    """
+    session = get_session()
+    try:
+        # Go left from start_col to column A (1)
+        for col in range(start_col - 1, 0, -1):
+            cell = session.query(CellValue).filter_by(
+                version_id=1, sheet=sheet, row_num=row_num, col_num=col
+            ).first()
+
+            if cell and cell.final_value is not None:
+                val = str(cell.final_value).strip()
+                # Skip if it's a unit, number, or too short
+                if val and not is_unit_of_measurement(val) and not val.replace('.', '').replace(',', '').isdigit():
+                    if len(val) > 2:
+                        return val
+
+        # Also check indicators table
+        ind = session.query(Indicator).filter_by(sheet=sheet, row_num=row_num).first()
+        if ind and ind.name:
+            return ind.name
+
+        return ""
+    finally:
+        session.close()
+
+
+def find_value_for_indicator(indicator_name: str, prefer_total: bool = True) -> dict:
+    """
+    Find value for an indicator by name.
+    Goes RIGHT from the label to find values.
+    If prefer_total=True, looks for 'ИТОГО' column or last value in row.
+    """
+    session = get_session()
+    try:
+        # Find indicator
+        ind = session.query(Indicator).filter(
+            Indicator.name.ilike(f"%{indicator_name}%")
+        ).first()
+
+        if not ind:
+            return {"error": f"Показатель '{indicator_name}' не найден"}
+
+        # Get all cells in this row, ordered by column
+        cells = session.query(CellValue).filter_by(
+            version_id=1, sheet=ind.sheet, row_num=ind.row_num
+        ).order_by(CellValue.col_num).all()
+
+        result = {
+            "indicator": ind.name,
+            "sheet": ind.sheet,
+            "row": ind.row_num,
+            "values": []
+        }
+
+        # Collect all numeric values
+        numeric_values = []
+        for cell in cells:
+            if cell.final_value is not None:
+                try:
+                    num = float(cell.final_value)
+                    numeric_values.append({
+                        "col": cell.col_num,
+                        "address": cell.address,
+                        "value": num
+                    })
+                except (ValueError, TypeError):
+                    pass
+
+        result["all_values"] = numeric_values
+
+        if prefer_total and numeric_values:
+            # Check if there's an "ИТОГО" column header
+            # Usually it's in the last columns or marked specifically
+            # For now, take the first significant value (col 3+) as "total"
+            for v in numeric_values:
+                if v["col"] >= 3:  # Skip label columns
+                    result["total"] = v["value"]
+                    result["total_address"] = f"{ind.sheet}!{v['address']}"
+                    break
+
+            # Also provide last value (often the total in time series)
+            if len(numeric_values) > 1:
+                result["last_value"] = numeric_values[-1]["value"]
+                result["last_address"] = f"{ind.sheet}!{numeric_values[-1]['address']}"
+
+        return result
+    finally:
+        session.close()
+
+
+def get_cell_with_label(cell_address: str) -> dict:
+    """
+    Get cell value with its label (found by going left).
+    """
+    import re
+    session = get_session()
+    try:
+        # Parse address
+        if '!' in cell_address:
+            sheet, addr = cell_address.split('!', 1)
+            sheet = sheet.strip("'")
+        else:
+            sheet = "DB2"
+            addr = cell_address
+
+        addr = addr.replace('$', '').upper()
+
+        # Parse column and row
+        match = re.match(r'([A-Z]+)(\d+)', addr)
+        if not match:
+            return {"error": "Некорректный адрес"}
+
+        col_letter = match.group(1)
+        row_num = int(match.group(2))
+
+        # Convert letter to number (A=1, B=2, etc.)
+        col_num = 0
+        for c in col_letter:
+            col_num = col_num * 26 + (ord(c) - ord('A') + 1)
+
+        # Get cell
+        cell = session.query(CellValue).filter_by(
+            version_id=1, sheet=sheet, address=addr
+        ).first()
+
+        if not cell:
+            return {"error": f"Ячейка {sheet}!{addr} не найдена"}
+
+        # Find label by going left
+        label = find_row_label(sheet, row_num, col_num)
+
+        return {
+            "address": f"{sheet}!{addr}",
+            "value": cell.final_value,
+            "formula": cell.formula,
+            "label": label,
+            "row": row_num,
+            "col": col_num
+        }
+    finally:
+        session.close()
+
+
 def load_model_context_from_db():
     """Load key financial indicators from database for AI context"""
     session = get_session()
     try:
         # Get key indicators with their values
-        indicators = session.query(Indicator).filter_by(version_id=1).all()
+        indicators = session.query(Indicator).limit(100).all()
 
         context_lines = ["Данные финансовой модели проекта 'Касаткина 7':"]
 
-        for ind in indicators[:100]:  # Limit to avoid huge context
-            if ind.label and ind.label.strip():
-                # Get value for this indicator
+        for ind in indicators:
+            if ind.name and ind.name.strip():
+                # Get value for this indicator (col 3 is usually total)
                 cell = session.query(CellValue).filter_by(
                     version_id=1,
                     sheet=ind.sheet,
-                    row_num=ind.row_num
+                    row_num=ind.row_num,
+                    col_num=3
                 ).first()
 
                 if cell and cell.final_value is not None:
-                    context_lines.append(f"- {ind.label}: {cell.final_value}")
+                    context_lines.append(f"- {ind.name}: {cell.final_value}")
 
         return "\n".join(context_lines)
     except Exception as e:
@@ -520,10 +687,9 @@ def search_indicator_value(query: str) -> str:
     """Search for indicator value by name (for AI tool use)"""
     session = get_session()
     try:
-        # Search indicators by label
+        # Search indicators by name
         indicators = session.query(Indicator).filter(
-            Indicator.version_id == 1,
-            Indicator.label.ilike(f"%{query}%")
+            Indicator.name.ilike(f"%{query}%")
         ).limit(10).all()
 
         if not indicators:
@@ -539,7 +705,7 @@ def search_indicator_value(query: str) -> str:
             ).order_by(CellValue.col_num).all()
 
             values = [str(c.final_value) for c in cells if c.final_value is not None]
-            results.append(f"{ind.label} ({ind.sheet}): {', '.join(values[:5])}")
+            results.append(f"{ind.name} ({ind.sheet}): {', '.join(values[:5])}")
 
         return "\n".join(results)
     except Exception as e:
@@ -559,9 +725,9 @@ def get_sheet_summary(sheet_name: str) -> str:
         if not cells:
             return f"Лист '{sheet_name}' не найден или пуст"
 
-        # Get indicators for this sheet
+        # Get indicators for this sheet (no version_id filter)
         indicators = session.query(Indicator).filter_by(
-            version_id=1, sheet=sheet_name
+            sheet=sheet_name
         ).all()
 
         result = [f"Лист {sheet_name}: {len(cells)} ячеек, {len(indicators)} показателей"]
@@ -571,8 +737,157 @@ def get_sheet_summary(sheet_name: str) -> str:
                 version_id=1, sheet=sheet_name, row_num=ind.row_num, col_num=3
             ).first()
             val = cell.final_value if cell else ""
-            if ind.label:
-                result.append(f"  - {ind.label}: {val}")
+            if ind.name:
+                result.append(f"  - {ind.name}: {val}")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Ошибка: {e}"
+    finally:
+        session.close()
+
+
+def get_cell_dependencies(cell_address: str) -> str:
+    """Get cell formula and its dependencies (for AI tool use)"""
+    import re
+    session = get_session()
+    try:
+        # Parse address: "CF!B15" or "B15"
+        if '!' in cell_address:
+            sheet, addr = cell_address.split('!', 1)
+            sheet = sheet.strip("'")
+        else:
+            sheet = "RESUME"
+            addr = cell_address
+
+        addr = addr.replace('$', '').upper()
+
+        # Find the cell
+        cell = session.query(CellValue).filter_by(
+            version_id=1, sheet=sheet, address=addr
+        ).first()
+
+        if not cell:
+            return f"Ячейка {sheet}!{addr} не найдена"
+
+        result = [f"Ячейка: {sheet}!{addr}"]
+        result.append(f"Значение: {cell.final_value}")
+
+        if cell.formula:
+            result.append(f"Формула: {cell.formula}")
+
+            # Parse formula to find references
+            # Pattern for cell references like A1, $A$1, 'Sheet'!A1
+            ref_pattern = r"(?:'([^']+)'!)?(\$?[A-Z]+\$?\d+)"
+            refs = re.findall(ref_pattern, cell.formula)
+
+            if refs:
+                result.append("Зависит от:")
+                for ref_sheet, ref_addr in refs[:10]:  # Limit to 10
+                    ref_sheet = ref_sheet or sheet
+                    ref_addr = ref_addr.replace('$', '')
+                    ref_cell = session.query(CellValue).filter_by(
+                        version_id=1, sheet=ref_sheet, address=ref_addr
+                    ).first()
+                    val = ref_cell.final_value if ref_cell else "N/A"
+                    result.append(f"  - {ref_sheet}!{ref_addr} = {val}")
+        else:
+            result.append("Формулы нет (вводимое значение)")
+
+        # Find cells that depend on this cell (reverse dependencies)
+        pattern = f"%{addr}%"
+        dependents = session.query(CellValue).filter(
+            CellValue.version_id == 1,
+            CellValue.formula.like(pattern)
+        ).limit(10).all()
+
+        if dependents:
+            result.append(f"От этой ячейки зависят ({len(dependents)}+):")
+            for dep in dependents[:5]:
+                result.append(f"  - {dep.sheet}!{dep.address}: {dep.formula[:50]}...")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Ошибка: {e}"
+    finally:
+        session.close()
+
+
+def analyze_indicator_impact(indicator_name: str) -> str:
+    """Analyze what affects an indicator and what it affects"""
+    import re
+    session = get_session()
+    try:
+        # Find indicator
+        ind = session.query(Indicator).filter(
+            Indicator.name.ilike(f"%{indicator_name}%")
+        ).first()
+
+        if not ind:
+            return f"Показатель '{indicator_name}' не найден"
+
+        result = [f"Показатель: {ind.name}"]
+        result.append(f"Лист: {ind.sheet}, строка: {ind.row_num}")
+        result.append(f"Секция: {ind.section or 'N/A'}")
+        result.append(f"Тип: {ind.indicator_type or 'N/A'}")
+
+        # Get all cells in this row
+        cells = session.query(CellValue).filter_by(
+            version_id=1, sheet=ind.sheet, row_num=ind.row_num
+        ).order_by(CellValue.col_num).all()
+
+        # Analyze formulas
+        inputs = set()
+        for cell in cells:
+            if cell.formula:
+                ref_pattern = r"(?:'([^']+)'!)?(\$?[A-Z]+\$?\d+)"
+                refs = re.findall(ref_pattern, cell.formula)
+                for ref_sheet, ref_addr in refs:
+                    ref_sheet = ref_sheet or ind.sheet
+                    inputs.add(f"{ref_sheet}!{ref_addr.replace('$', '')}")
+
+        if inputs:
+            result.append(f"\nВходные данные (влияют на {ind.name}):")
+            for inp in list(inputs)[:15]:
+                # Try to find indicator name for this cell
+                parts = inp.split('!')
+                if len(parts) == 2:
+                    inp_sheet, inp_addr = parts
+                    match = re.match(r'[A-Z]+(\d+)', inp_addr)
+                    if match:
+                        row = int(match.group(1))
+                        inp_ind = session.query(Indicator).filter_by(
+                            sheet=inp_sheet, row_num=row
+                        ).first()
+                        if inp_ind:
+                            result.append(f"  - {inp} ({inp_ind.name})")
+                        else:
+                            result.append(f"  - {inp}")
+
+        # Find what depends on this indicator
+        dependents = []
+        for cell in cells:
+            pattern = f"%{cell.address}%"
+            deps = session.query(CellValue).filter(
+                CellValue.version_id == 1,
+                CellValue.formula.like(pattern)
+            ).limit(5).all()
+            dependents.extend(deps)
+
+        if dependents:
+            result.append(f"\nВлияет на:")
+            seen = set()
+            for dep in dependents[:10]:
+                dep_ind = session.query(Indicator).filter_by(
+                    sheet=dep.sheet, row_num=dep.row_num
+                ).first()
+                key = f"{dep.sheet}!row{dep.row_num}"
+                if key not in seen:
+                    seen.add(key)
+                    if dep_ind:
+                        result.append(f"  - {dep_ind.name} ({dep.sheet})")
+                    else:
+                        result.append(f"  - {dep.sheet}!{dep.address}")
 
         return "\n".join(result)
     except Exception as e:
@@ -610,6 +925,62 @@ AI_TOOLS = [
             },
             "required": ["sheet_name"]
         }
+    },
+    {
+        "name": "get_cell_dependencies",
+        "description": "Получить формулу ячейки и её зависимости. Показывает от каких ячеек зависит и на что влияет. Используй для анализа связей в модели.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "cell_address": {
+                    "type": "string",
+                    "description": "Адрес ячейки в формате 'ЛИСТ!АДРЕС' или просто 'АДРЕС'. Примеры: 'CF!B15', 'DB2!C8', 'AA5'"
+                }
+            },
+            "required": ["cell_address"]
+        }
+    },
+    {
+        "name": "analyze_impact",
+        "description": "Анализ влияния показателя: что на него влияет и на что он влияет. Используй для ответов о зависимостях и чувствительности.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "indicator_name": {
+                    "type": "string",
+                    "description": "Название показателя для анализа влияния (например: 'СМР', 'КВАРТИРЫ', 'ПАРКИНГ')"
+                }
+            },
+            "required": ["indicator_name"]
+        }
+    },
+    {
+        "name": "get_value_with_label",
+        "description": "Получить значение ячейки вместе с её подписью. Подпись ищется ВЛЕВО от ячейки, пропуская единицы измерения.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "cell_address": {
+                    "type": "string",
+                    "description": "Адрес ячейки: 'CF!D15' или 'D15'"
+                }
+            },
+            "required": ["cell_address"]
+        }
+    },
+    {
+        "name": "find_indicator_value",
+        "description": "Найти значение показателя по названию. Ищет ВПРАВО от названия, для динамических рядов возвращает ИТОГО или последнее значение.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "indicator_name": {
+                    "type": "string",
+                    "description": "Название показателя (СМР, КВАРТИРЫ, выручка и т.д.)"
+                }
+            },
+            "required": ["indicator_name"]
+        }
     }
 ]
 
@@ -620,6 +991,16 @@ def process_tool_call(tool_name: str, tool_input: dict) -> str:
         return search_indicator_value(tool_input.get("query", ""))
     elif tool_name == "get_sheet":
         return get_sheet_summary(tool_input.get("sheet_name", ""))
+    elif tool_name == "get_cell_dependencies":
+        return get_cell_dependencies(tool_input.get("cell_address", ""))
+    elif tool_name == "analyze_impact":
+        return analyze_indicator_impact(tool_input.get("indicator_name", ""))
+    elif tool_name == "get_value_with_label":
+        result = get_cell_with_label(tool_input.get("cell_address", ""))
+        return json.dumps(result, ensure_ascii=False)
+    elif tool_name == "find_indicator_value":
+        result = find_value_for_indicator(tool_input.get("indicator_name", ""))
+        return json.dumps(result, ensure_ascii=False)
     return "Неизвестный инструмент"
 
 
