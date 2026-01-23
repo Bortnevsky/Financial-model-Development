@@ -330,26 +330,29 @@ def load_model_with_labels(sheet_name: str, version_id: int = 1):
         max_row = max((c.row_num for c in cells if c.row_num), default=0)
         max_col = max((c.col_num for c in cells if c.col_num), default=0)
 
-        # Limit columns (skip first few label columns, focus on data)
-        col_start = 3  # Start from column C
-        max_col = min(max_col, 25)  # Limit to Y
+        # Define columns
+        col_start = 3  # Start from column C (skip A, B which are labels)
+        max_col = min(max_col, 20)  # Limit columns
+        col_names = [num_to_col(i) for i in range(col_start, max_col + 1)]
 
-        # Build data
+        # Build data with all columns initialized
         rows_data = []
         for row_num in range(1, max_row + 1):
-            row_dict = {"Строка": row_num}
+            row_dict = {"№": row_num}
 
             # Add label from indicators
             if row_num in indicators:
                 row_dict["Показатель"] = indicators[row_num]["name"]
-                row_dict["Раздел"] = indicators[row_num]["section"] or ""
             else:
                 row_dict["Показатель"] = ""
-                row_dict["Раздел"] = ""
+
+            # Initialize all data columns with empty string
+            for col in col_names:
+                row_dict[col] = ""
 
             rows_data.append(row_dict)
 
-        # Add cell values
+        # Fill in cell values
         for cell in cells:
             if cell.row_num and cell.col_num and cell.row_num <= max_row:
                 if cell.col_num >= col_start and cell.col_num <= max_col:
@@ -365,8 +368,8 @@ def load_model_with_labels(sheet_name: str, version_id: int = 1):
                             rows_data[cell.row_num - 1][col_name] = val
 
         df = pd.DataFrame(rows_data)
-        # Remove empty rows (no indicator and no values)
-        df = df[df.apply(lambda x: x["Показатель"] != "" or any(x[3:] != ""), axis=1)]
+        # Keep only rows with indicator or some data
+        df = df[(df["Показатель"] != "") | (df[col_names].apply(lambda x: (x != "").any(), axis=1))]
         return df
 
     except Exception as e:
@@ -447,49 +450,19 @@ if not db_ok:
 if page == "📊 Dashboard":
     st.markdown("## 📊 Финансовая модель — Касаткина 7")
 
-    # Sheet selector for main view
-    all_sheets = ["DB", "DB2", "CF", "CF2", "TS1", "TS2", "RESUME", "DETAILS", "ПРОДАЖИ"]
-    selected_main_sheet = st.selectbox("Выберите лист", all_sheets, index=1, key="main_sheet")
+    # Sheet selector
+    all_sheets = ["DB2", "DB", "CF", "CF2", "TS1", "TS2", "RESUME", "DETAILS", "ПРОДАЖИ"]
+    selected_sheet = st.selectbox("Лист", all_sheets, index=0, key="main_sheet")
 
     # Load data with labels
-    df = load_model_with_labels(selected_main_sheet)
+    df = load_model_with_labels(selected_sheet)
 
     if not df.empty:
-        # Get unique sections from data
-        indicators = load_indicators(selected_main_sheet)
-        sections_list = list(set(ind["section"] for ind in indicators.values() if ind["section"]))
-        sections_list = [s for s in sections_list if s]  # Remove empty
-
-        if sections_list:
-            # Create tabs from actual sections
-            tab_names = sections_list + ["Вся модель"]
-            tabs = st.tabs(tab_names)
-
-            for i, section_name in enumerate(sections_list):
-                with tabs[i]:
-                    st.markdown(f"### {section_name}")
-                    if "Раздел" in df.columns:
-                        df_section = df[df["Раздел"] == section_name]
-                        if not df_section.empty:
-                            st.dataframe(df_section, use_container_width=True, height=500)
-                        else:
-                            st.info("Нет данных для этого раздела")
-                    else:
-                        st.info("Нет данных для этого раздела")
-
-            # Full model view
-            with tabs[-1]:
-                st.markdown("### Вся модель")
-                st.dataframe(df, use_container_width=True, height=600)
-                st.caption(f"Всего строк: {len(df)}")
-        else:
-            # No sections - show all data
-            st.markdown("### Все данные")
-            st.dataframe(df, use_container_width=True, height=600)
-            st.caption(f"Всего строк: {len(df)}")
-
+        # Show table like Excel
+        st.dataframe(df, use_container_width=True, height=650)
+        st.caption(f"Строк: {len(df)}")
     else:
-        st.warning(f"Нет данных для листа {selected_main_sheet}. Проверьте базу данных.")
+        st.warning(f"Нет данных для листа {selected_sheet}")
 
 
 elif page == "📋 Таблицы модели":
