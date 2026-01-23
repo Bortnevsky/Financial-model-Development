@@ -896,6 +896,94 @@ def analyze_indicator_impact(indicator_name: str) -> str:
         session.close()
 
 
+def read_excel_cell(cell_address: str) -> str:
+    """
+    Read cell from Excel with context - label, value, surrounding cells.
+    This gives accurate data unlike the broken indicators table.
+    """
+    import openpyxl
+    from openpyxl.utils import get_column_letter, column_index_from_string
+    import re
+
+    try:
+        # Parse address
+        if '!' in cell_address:
+            sheet_name, addr = cell_address.split('!', 1)
+            sheet_name = sheet_name.strip("'")
+        else:
+            return "Укажите лист: SHEET!ADDR (например DB!U38)"
+
+        addr = addr.replace('$', '').upper()
+
+        # Parse column and row
+        match = re.match(r'([A-Z]+)(\d+)', addr)
+        if not match:
+            return "Некорректный адрес"
+
+        col_letter = match.group(1)
+        row = int(match.group(2))
+        col = column_index_from_string(col_letter)
+
+        # Open Excel
+        wb = openpyxl.load_workbook('FM_Касаткина2.xlsx', data_only=True)
+
+        if sheet_name not in wb.sheetnames:
+            wb.close()
+            return f"Лист '{sheet_name}' не найден. Доступные: {', '.join(wb.sheetnames)}"
+
+        ws = wb[sheet_name]
+
+        # Get cell value
+        cell = ws.cell(row=row, column=col)
+        value = cell.value
+
+        result = [f"=== {sheet_name}!{addr} ==="]
+        result.append(f"Значение: {value}")
+
+        # Get formula (need to reload without data_only)
+        wb2 = openpyxl.load_workbook('FM_Касаткина2.xlsx', data_only=False)
+        ws2 = wb2[sheet_name]
+        formula_cell = ws2.cell(row=row, column=col)
+        if formula_cell.value and str(formula_cell.value).startswith('='):
+            result.append(f"Формула: {formula_cell.value}")
+        wb2.close()
+
+        # Find label by going LEFT
+        label = None
+        for c in range(col - 1, 0, -1):
+            left_cell = ws.cell(row=row, column=c)
+            if left_cell.value and isinstance(left_cell.value, str):
+                val = str(left_cell.value).strip()
+                # Skip units and short strings
+                if len(val) > 2 and not val.replace('.','').replace(',','').replace('%','').replace('-','').isdigit():
+                    if val.lower() not in ['м²', 'руб', 'руб.', 'тыс.', 'млн.', '%', 'шт', 'шт.', 'ед.', 'млн. руб.', 'тыс. руб.']:
+                        label = val
+                        result.append(f"Подпись (col {get_column_letter(c)}): {label}")
+                        break
+
+        # Context - rows above and below
+        result.append(f"\nКонтекст (строки {max(1,row-5)} - {row+5}):")
+        for r in range(max(1, row - 5), row + 6):
+            # Find label for this row
+            row_label = ""
+            for c in range(col - 1, 0, -1):
+                lc = ws.cell(row=r, column=c)
+                if lc.value and isinstance(lc.value, str) and len(str(lc.value)) > 2:
+                    row_label = str(lc.value)[:30]
+                    break
+
+            row_val = ws.cell(row=r, column=col).value
+            marker = " ← ЦЕЛЕВАЯ" if r == row else ""
+            if row_val is not None or row_label:
+                result.append(f"  Row {r}: {row_label:32} | {str(row_val)[:15]}{marker}")
+
+        wb.close()
+        return "\n".join(result)
+
+    except Exception as e:
+        return f"Ошибка чтения Excel: {e}"
+
+
 def execute_sql_query(sql: str) -> str:
     """Execute read-only SQL query on the database"""
     import sqlite3
@@ -1140,13 +1228,29 @@ AI_TOOLS = [
             },
             "required": ["cell_address", "direction"]
         }
+    },
+    {
+        "name": "excel_cell",
+        "description": "ЛУЧШИЙ ИНСТРУМЕНТ! Читает ячейку напрямую из Excel файла с подписью и контекстом. Автоматически находит название показателя идя ВЛЕВО от значения. Используй ЭТО для анализа ячеек!",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "cell_address": {
+                    "type": "string",
+                    "description": "Адрес ячейки: ЛИСТ!АДРЕС. Примеры: DB!U38, CF!P87, RESUME!D10"
+                }
+            },
+            "required": ["cell_address"]
+        }
     }
 ]
 
 
 def process_tool_call(tool_name: str, tool_input: dict) -> str:
     """Process AI tool calls"""
-    if tool_name == "search_indicator":
+    if tool_name == "excel_cell":
+        return read_excel_cell(tool_input.get("cell_address", ""))
+    elif tool_name == "search_indicator":
         return search_indicator_value(tool_input.get("query", ""))
     elif tool_name == "get_sheet":
         return get_sheet_summary(tool_input.get("sheet_name", ""))
@@ -1525,14 +1629,37 @@ elif page == "💬 AI Ассистент":
     model_context = get_ai_context()
 
     # System prompt for AI
-    system_prompt = f"""Ты финансовый аналитик, эксперт по девелоперским проектам недвижимости.
-Отвечай на русском языке, кратко и по делу.
+    system_prompt = f"""Ты — опытный финансист-аналитик, работающий с финансовой моделью жилого комплекса "Касаткина" в Москве (застройщик MR Group).
 
-У тебя есть доступ к инструментам для поиска данных в финансовой модели:
-- search_indicator: поиск показателя по названию
-- get_sheet: получить данные листа модели
+КОНТЕКСТ ПРОЕКТА:
+- ЖК "Касаткина" — жилой комплекс бизнес-класса в Москве
+- Модель содержит: план продаж, строительный бюджет, финансирование, денежные потоки
+- Ключевые листы: DB (Dashboard), CF2 (Cash Flow), TS1 (Time Series), PL (P&L)
 
-ВСЕГДА используй инструменты для поиска актуальных данных, не выдумывай цифры!
+ТВОИ КОМПЕТЕНЦИИ:
+- Глубокое понимание структуры финансовых моделей девелоперских проектов
+- Знание специфики ценообразования и динамики продаж на рынке недвижимости Москвы
+- Понимание механизмов проектного финансирования и эскроу-счетов
+- Опыт работы с показателями: IRR, NPV, DSCR, LTV, маржинальность
+
+ДОСТУПНЫЕ ИНСТРУМЕНТЫ:
+1. read_excel_cell — чтение данных напрямую из Excel с контекстом (подписи, соседние ячейки). ИСПОЛЬЗУЙ ЭТО для точных ответов!
+2. sql_query — SQL-запросы к базе данных модели
+3. trace_dependencies — анализ зависимостей между ячейками (что влияет, на что влияет)
+4. search_indicator — поиск показателей по названию
+
+ПРАВИЛА РАБОТЫ:
+1. При вопросе о конкретной ячейке — ВСЕГДА используй read_excel_cell для точного ответа
+2. Ищи подпись показателя СЛЕВА от значения (стандарт Excel-моделей)
+3. Пропускай единицы измерения (м², руб, %, шт) при поиске подписи
+4. НИКОГДА не выдумывай цифры — используй инструменты!
+5. При анализе сценариев — показывай влияние на ключевые метрики (IRR, прибыль, CF)
+
+СТИЛЬ ОБЩЕНИЯ:
+- Профессиональный, но дружелюбный
+- Конкретные цифры и факты из модели
+- Объяснение логики расчётов при необходимости
+- Отвечай на русском языке, кратко и по делу
 
 Базовый контекст модели:
 {model_context}
