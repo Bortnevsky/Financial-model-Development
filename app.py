@@ -896,6 +896,132 @@ def analyze_indicator_impact(indicator_name: str) -> str:
         session.close()
 
 
+def execute_sql_query(sql: str) -> str:
+    """Execute read-only SQL query on the database"""
+    import sqlite3
+
+    # Security: only allow SELECT
+    sql_clean = sql.strip().upper()
+    if not sql_clean.startswith('SELECT'):
+        return "Ошибка: разрешены только SELECT запросы"
+
+    # Block dangerous keywords
+    dangerous = ['DROP', 'DELETE', 'INSERT', 'UPDATE', 'ALTER', 'CREATE', 'TRUNCATE']
+    for word in dangerous:
+        if word in sql_clean:
+            return f"Ошибка: запрещённая операция {word}"
+
+    try:
+        conn = sqlite3.connect('fm_demo.db')
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description] if cursor.description else []
+        conn.close()
+
+        if not rows:
+            return "Запрос выполнен, результатов нет"
+
+        # Format results
+        result = [" | ".join(columns)]
+        result.append("-" * 50)
+        for row in rows[:50]:  # Limit to 50 rows
+            result.append(" | ".join(str(v) for v in row))
+
+        if len(rows) > 50:
+            result.append(f"... и ещё {len(rows) - 50} строк")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Ошибка SQL: {e}"
+
+
+def trace_dependency_chain(cell_address: str, direction: str = "up") -> str:
+    """
+    Trace dependency chain from a cell.
+    direction: "up" = what this cell depends on (inputs)
+               "down" = what depends on this cell (outputs)
+    """
+    import re
+    session = get_session()
+    try:
+        # Parse address
+        if '!' in cell_address:
+            sheet, addr = cell_address.split('!', 1)
+            sheet = sheet.strip("'")
+        else:
+            return "Укажите лист: SHEET!ADDR"
+
+        addr = addr.replace('$', '').upper()
+
+        result = [f"Цепочка зависимостей для {sheet}!{addr} ({direction}):"]
+
+        if direction == "up":
+            # What does this cell depend on? Parse formula recursively
+            visited = set()
+            queue = [(sheet, addr, 0)]
+
+            while queue and len(visited) < 100:
+                cur_sheet, cur_addr, depth = queue.pop(0)
+                key = f"{cur_sheet}!{cur_addr}"
+
+                if key in visited:
+                    continue
+                visited.add(key)
+
+                cell = session.query(CellValue).filter_by(
+                    version_id=1, sheet=cur_sheet, address=cur_addr
+                ).first()
+
+                if cell:
+                    # Find indicator name for this row
+                    ind = session.query(Indicator).filter_by(
+                        sheet=cur_sheet, row_num=cell.row_num
+                    ).first()
+                    label = ind.name if ind else ""
+
+                    indent = "  " * depth
+                    val_str = f"= {cell.final_value}" if cell.final_value else "(пусто)"
+
+                    if cell.formula:
+                        result.append(f"{indent}{key} [{label}] {val_str}")
+                        result.append(f"{indent}  формула: {cell.formula[:60]}")
+
+                        # Parse references
+                        ref_pattern = r"(?:'([^']+)'!)?(\$?[A-Z]+\$?\d+)"
+                        refs = re.findall(ref_pattern, cell.formula)
+                        for ref_sheet, ref_addr in refs[:10]:
+                            ref_sheet = ref_sheet or cur_sheet
+                            ref_addr = ref_addr.replace('$', '')
+                            queue.append((ref_sheet, ref_addr, depth + 1))
+                    else:
+                        result.append(f"{indent}{key} [{label}] {val_str} (INPUT)")
+
+        else:  # down - what depends on this cell
+            # Find cells that reference this address
+            pattern = f"%{addr}%"
+            dependents = session.query(CellValue).filter(
+                CellValue.version_id == 1,
+                CellValue.formula.like(pattern)
+            ).limit(30).all()
+
+            result.append(f"Найдено {len(dependents)} ячеек, зависящих от {sheet}!{addr}:")
+
+            for dep in dependents:
+                ind = session.query(Indicator).filter_by(
+                    sheet=dep.sheet, row_num=dep.row_num
+                ).first()
+                label = ind.name if ind else ""
+                result.append(f"  {dep.sheet}!{dep.address} [{label}]")
+                result.append(f"    формула: {dep.formula[:60]}...")
+
+        return "\n".join(result[:100])  # Limit output
+    except Exception as e:
+        return f"Ошибка: {e}"
+    finally:
+        session.close()
+
+
 # AI Tools definition for Claude
 AI_TOOLS = [
     {
@@ -981,6 +1107,39 @@ AI_TOOLS = [
             },
             "required": ["indicator_name"]
         }
+    },
+    {
+        "name": "sql_query",
+        "description": "Выполнить SQL SELECT запрос к базе данных. Таблицы: cell_values (sheet, address, row_num, col_num, formula, calc_value, final_value), indicators (name, sheet, row_num, section), fm_versions, sheets. ИСПОЛЬЗУЙ для сложных вопросов!",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sql": {
+                    "type": "string",
+                    "description": "SQL SELECT запрос. Пример: SELECT name, sheet FROM indicators WHERE name LIKE '%прибыль%'"
+                }
+            },
+            "required": ["sql"]
+        }
+    },
+    {
+        "name": "trace_dependencies",
+        "description": "Построить цепочку зависимостей для ячейки. direction='up' - от чего зависит (входные данные), direction='down' - что зависит от неё (влияние).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "cell_address": {
+                    "type": "string",
+                    "description": "Адрес ячейки в формате ЛИСТ!АДРЕС, например: DB!U38, CF!P87"
+                },
+                "direction": {
+                    "type": "string",
+                    "enum": ["up", "down"],
+                    "description": "up = входные данные (от чего зависит), down = влияние (что зависит от неё)"
+                }
+            },
+            "required": ["cell_address", "direction"]
+        }
     }
 ]
 
@@ -991,6 +1150,13 @@ def process_tool_call(tool_name: str, tool_input: dict) -> str:
         return search_indicator_value(tool_input.get("query", ""))
     elif tool_name == "get_sheet":
         return get_sheet_summary(tool_input.get("sheet_name", ""))
+    elif tool_name == "sql_query":
+        return execute_sql_query(tool_input.get("sql", ""))
+    elif tool_name == "trace_dependencies":
+        return trace_dependency_chain(
+            tool_input.get("cell_address", ""),
+            tool_input.get("direction", "up")
+        )
     elif tool_name == "get_cell_dependencies":
         return get_cell_dependencies(tool_input.get("cell_address", ""))
     elif tool_name == "analyze_impact":
