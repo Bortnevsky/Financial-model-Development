@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from db.schema import get_session, CellValue, Sheet, FMVersion, Project
 from db.queries import get_sheet_data, num_to_col
+import os
 
 # Page config - MUST be first Streamlit command
 st.set_page_config(
@@ -215,16 +216,37 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+def check_database():
+    """Check if database exists and has data"""
+    db_path = Path(__file__).parent / "fm_demo.db"
+
+    if not db_path.exists():
+        return False, "База данных не найдена"
+
+    if db_path.stat().st_size < 1000:  # Less than 1KB = empty
+        return False, "База данных пустая (0 байт)"
+
+    try:
+        session = get_session()
+        count = session.query(CellValue).count()
+        session.close()
+        if count == 0:
+            return False, "В базе нет данных"
+        return True, f"База OK: {count:,} ячеек"
+    except Exception as e:
+        return False, f"Ошибка базы: {str(e)}"
+
+
 def get_sheets_list():
     """Get list of available sheets"""
-    session = get_session()
     try:
+        session = get_session()
         sheets = session.query(Sheet).all()
-        return [s.name for s in sheets]
-    except:
-        return []
-    finally:
+        result = [s.name for s in sheets]
         session.close()
+        return result
+    except Exception as e:
+        return []
 
 
 def load_sheet_data(sheet_name: str, version_id: int = 1):
@@ -316,76 +338,75 @@ with st.sidebar:
 
 
 # ============================================
+# DATABASE CHECK
+# ============================================
+db_ok, db_status = check_database()
+
+if not db_ok:
+    st.error(f"⚠️ Проблема с базой данных: {db_status}")
+    st.markdown("""
+    ### Как исправить (Windows):
+
+    Откройте командную строку в папке проекта и выполните:
+
+    ```bash
+    del fm_demo.db
+    git fetch origin claude/add-model-selection-0dfbH
+    git checkout origin/claude/add-model-selection-0dfbH -- fm_demo.db
+    ```
+
+    Затем перезапустите Streamlit: `streamlit run app.py`
+    """)
+    st.stop()
+
+# ============================================
 # MAIN CONTENT
 # ============================================
 
 if page == "📊 Dashboard":
-    st.markdown("## 📊 Dashboard — Касаткина 7")
-    st.caption("Ключевые показатели финансовой модели")
+    st.markdown("## 📊 Финансовая модель — Касаткина 7")
 
-    # KPI Row
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Load DB sheet data (main dashboard view like Excel)
+    df = load_sheet_data("DB")
 
-    with col1:
-        st.metric("Выручка", "73.5 млрд", "+12%")
-    with col2:
-        st.metric("Себестоимость", "35.0 млрд", "-3%")
-    with col3:
-        st.metric("Маржа", "52.3%", "+5.2 п.п.")
-    with col4:
-        st.metric("Площадь прод.", "97.5 тыс м²", "")
-    with col5:
-        st.metric("Цена ср.", "754 т.р./м²", "+8%")
+    if not df.empty:
+        # Section tabs for Excel-like navigation
+        tabs = st.tabs(["ТЭП", "ДОХОДЫ", "ИНВЕСТИЦИИ", "ФИНАНСИРОВАНИЕ", "СРОКИ", "РЕЗУЛЬТАТ", "Вся модель"])
 
-    st.markdown("---")
+        # Section row ranges (approximate, based on typical FM structure)
+        sections = {
+            "ТЭП": (1, 35),
+            "ДОХОДЫ": (36, 90),
+            "ИНВЕСТИЦИИ": (91, 150),
+            "ФИНАНСИРОВАНИЕ": (151, 200),
+            "СРОКИ": (201, 230),
+            "РЕЗУЛЬТАТ": (231, 280)
+        }
 
-    # Two columns layout
-    col_left, col_right = st.columns([2, 1])
+        for i, (section_name, (row_start, row_end)) in enumerate(sections.items()):
+            with tabs[i]:
+                st.markdown(f"### {section_name}")
+                df_section = df.iloc[max(0, row_start-1):min(len(df), row_end)]
+                if not df_section.empty:
+                    st.dataframe(df_section, use_container_width=True, height=500)
+                else:
+                    st.info("Нет данных для этого раздела")
 
-    with col_left:
-        st.markdown("### Структура выручки")
+        # Full model view
+        with tabs[-1]:
+            st.markdown("### Вся модель")
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                row_from = st.number_input("Строки с", min_value=1, value=1, key="dash_row_from")
+            with col2:
+                row_to = st.number_input("по", min_value=1, value=100, key="dash_row_to")
 
-        revenue_data = pd.DataFrame({
-            "Категория": ["Квартиры", "Ритейл", "Паркинг"],
-            "Площадь": ["91 000 м²", "6 514 м²", "696 м.м."],
-            "Цена": ["719 т.р./м²", "750 т.р./м²", "4.5 млн"],
-            "Выручка": ["65.4 млрд", "4.9 млрд", "3.1 млрд"],
-            "Доля": ["89%", "7%", "4%"]
-        })
-        st.dataframe(revenue_data, use_container_width=True, hide_index=True)
+            df_view = df.iloc[int(row_from)-1:int(row_to)]
+            st.dataframe(df_view, use_container_width=True, height=600)
+            st.caption(f"Показано строк: {len(df_view)} из {len(df)}")
 
-        st.markdown("### Структура расходов")
-
-        costs_data = pd.DataFrame({
-            "Статья": ["СМР", "Земля", "Коммерческие", "Прочие", "ИТОГО"],
-            "Сумма": ["24.4 млрд", "4.8 млрд", "4.4 млрд", "1.5 млрд", "35.0 млрд"],
-            "На м²": ["250 т.р.", "49 т.р.", "45 т.р.", "15 т.р.", "359 т.р."],
-            "Доля": ["70%", "14%", "12%", "4%", "100%"]
-        })
-        st.dataframe(costs_data, use_container_width=True, hide_index=True)
-
-    with col_right:
-        st.markdown("### P&L Сводка")
-
-        pnl_data = pd.DataFrame({
-            "Показатель": ["Выручка", "Себестоимость", "Валовая прибыль", "Маржа"],
-            "Значение": ["73 447 млн", "-35 039 млн", "38 408 млн", "52.3%"]
-        })
-        st.dataframe(pnl_data, use_container_width=True, hide_index=True)
-
-        st.markdown("### AI Рекомендация")
-        st.markdown("""
-        <div class="chat-ai">
-            <strong style="color: #f59e0b;">🤖 AI Ассистент</strong><br><br>
-            Маржа 52% — выше среднего по рынку.<br><br>
-            ⚠️ Обрати внимание на паркинг — обеспеченность 0.41, риск при низком спросе.<br><br>
-            💡 Рекомендую сценарий с ценой +10%.
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("💬 Спросить AI", use_container_width=True):
-            st.session_state.page = "💬 AI Ассистент"
-            st.rerun()
+    else:
+        st.warning("Нет данных для листа DB. Проверьте базу данных.")
 
 
 elif page == "📋 Таблицы модели":
