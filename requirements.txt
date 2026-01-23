@@ -2,3 +2,6 @@ anthropic>=0.39.0
 openpyxl>=3.1.0
 sqlalchemy>=2.0.0
 pycel>=1.0b30
+streamlit>=1.30.0
+pandas>=2.0.0
+networkx>=3.0
