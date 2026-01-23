@@ -12,7 +12,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from db.schema import get_session, CellValue, Sheet, FMVersion, Project
+from db.schema import get_session, CellValue, Sheet, FMVersion, Project, Indicator
 from db.queries import get_sheet_data, num_to_col
 
 # Page config
@@ -965,6 +965,9 @@ elif page == "💬 AI Ассистент":
             "Sarah",        # News anchor
         ], key="eleven_voice")
 
+        # Voice mode toggle
+        voice_enabled = st.toggle("🔊 Озвучивать ответы", value=False, key="voice_enabled")
+
     st.markdown("---")
 
     # Load model context from database dynamically
@@ -998,6 +1001,10 @@ elif page == "💬 AI Ассистент":
         css_class = "chat-ai" if msg["role"] == "assistant" else "chat-user"
         icon = "🤖" if msg["role"] == "assistant" else "👤"
         st.markdown(f'<div class="{css_class}"><strong>{icon}</strong> {msg["content"]}</div>', unsafe_allow_html=True)
+
+    # Audio player for voice responses
+    if "last_audio" in st.session_state and st.session_state.last_audio:
+        st.audio(st.session_state.last_audio, format="audio/mpeg", autoplay=True)
 
     # Quick buttons
     st.markdown("**Быстрые вопросы:**")
@@ -1083,6 +1090,50 @@ elif page == "💬 AI Ассистент":
 
                     if answer:
                         st.session_state.messages.append({"role": "assistant", "content": answer})
+
+                        # Generate voice if enabled
+                        if voice_enabled and eleven_key:
+                            try:
+                                import requests
+                                # Get voice ID (simplified mapping)
+                                voice_ids = {
+                                    "Natasha": "uxKr2vlA4hYgXZR1oPRT",
+                                    "Aaron": "UfCFnGv2bnKh58MXMCGg",
+                                    "Brian": "nPczCjzI2devNBz1zQrb",
+                                    "Cassidy": "56AoDkrOh6qfVPDXZ7Pt",
+                                    "David": "onwK4e9ZLuTAKqWW03F9",
+                                    "Bill": "pqHfZKP75CvOlQylNhV4",
+                                    "Charlotte": "XB0fDUnXU5powFXDhCwa",
+                                    "Dorothy": "ThT5KcBeYPX3keUQqHPh",
+                                    "Freya": "jsCqWAovK2LkecY7zXl4",
+                                    "George": "JBFqnCBsd6RMkjVDRZzb",
+                                    "Liam": "TX3LPaxmHKxFdv7VOQHJ",
+                                    "Lily": "pFZP5JQG7iQjIQuC4Bku",
+                                    "Nicole": "piTKgcLEGmPE4e6mEKli",
+                                    "Sarah": "EXAVITQu4vr4xnSDxMaL",
+                                }
+                                voice_id = voice_ids.get(voice, "nPczCjzI2devNBz1zQrb")
+
+                                tts_response = requests.post(
+                                    f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+                                    headers={
+                                        "xi-api-key": eleven_key,
+                                        "Content-Type": "application/json"
+                                    },
+                                    json={
+                                        "text": answer[:500],  # Limit text length
+                                        "model_id": eleven_model,
+                                        "voice_settings": {
+                                            "stability": 0.5,
+                                            "similarity_boost": 0.75
+                                        }
+                                    }
+                                )
+
+                                if tts_response.status_code == 200:
+                                    st.session_state.last_audio = tts_response.content
+                            except Exception as voice_err:
+                                st.warning(f"Ошибка озвучки: {voice_err}")
                     else:
                         st.session_state.messages.append({"role": "assistant", "content": "Не удалось получить ответ"})
 
