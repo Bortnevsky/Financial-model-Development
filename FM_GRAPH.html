@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FM Pro - Граф зависимостей</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-data/7.1.6/vis-data.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/vis-network.min.js"></script>
     <style>
         * {
@@ -326,7 +327,7 @@
             }
         };
         
-        const network = new vis.Network(container, data, options);
+        var network = new vis.Network(container, data, options);
         
         // Node click handler
         network.on('click', function(params) {
@@ -356,8 +357,8 @@
         });
         
         // Toggle physics
-        let physicsEnabled = true;
-        function togglePhysics() {
+        var physicsEnabled = true;
+        window.togglePhysics = function() {
             physicsEnabled = !physicsEnabled;
             network.setOptions({ physics: { enabled: physicsEnabled } });
         }
