@@ -488,6 +488,141 @@ def format_number(val, suffix=""):
         return str(val)
 
 
+def load_model_context_from_db():
+    """Load key financial indicators from database for AI context"""
+    session = get_session()
+    try:
+        # Get key indicators with their values
+        indicators = session.query(Indicator).filter_by(version_id=1).all()
+
+        context_lines = ["Данные финансовой модели проекта 'Касаткина 7':"]
+
+        for ind in indicators[:100]:  # Limit to avoid huge context
+            if ind.label and ind.label.strip():
+                # Get value for this indicator
+                cell = session.query(CellValue).filter_by(
+                    version_id=1,
+                    sheet=ind.sheet,
+                    row_num=ind.row_num
+                ).first()
+
+                if cell and cell.final_value is not None:
+                    context_lines.append(f"- {ind.label}: {cell.final_value}")
+
+        return "\n".join(context_lines)
+    except Exception as e:
+        return f"Ошибка загрузки контекста: {e}"
+    finally:
+        session.close()
+
+
+def search_indicator_value(query: str) -> str:
+    """Search for indicator value by name (for AI tool use)"""
+    session = get_session()
+    try:
+        # Search indicators by label
+        indicators = session.query(Indicator).filter(
+            Indicator.version_id == 1,
+            Indicator.label.ilike(f"%{query}%")
+        ).limit(10).all()
+
+        if not indicators:
+            return f"Показатель '{query}' не найден"
+
+        results = []
+        for ind in indicators:
+            # Get all values in the row
+            cells = session.query(CellValue).filter_by(
+                version_id=1,
+                sheet=ind.sheet,
+                row_num=ind.row_num
+            ).order_by(CellValue.col_num).all()
+
+            values = [str(c.final_value) for c in cells if c.final_value is not None]
+            results.append(f"{ind.label} ({ind.sheet}): {', '.join(values[:5])}")
+
+        return "\n".join(results)
+    except Exception as e:
+        return f"Ошибка поиска: {e}"
+    finally:
+        session.close()
+
+
+def get_sheet_summary(sheet_name: str) -> str:
+    """Get summary of a sheet (for AI tool use)"""
+    session = get_session()
+    try:
+        cells = session.query(CellValue).filter_by(
+            version_id=1, sheet=sheet_name
+        ).limit(500).all()
+
+        if not cells:
+            return f"Лист '{sheet_name}' не найден или пуст"
+
+        # Get indicators for this sheet
+        indicators = session.query(Indicator).filter_by(
+            version_id=1, sheet=sheet_name
+        ).all()
+
+        result = [f"Лист {sheet_name}: {len(cells)} ячеек, {len(indicators)} показателей"]
+
+        for ind in indicators[:20]:
+            cell = session.query(CellValue).filter_by(
+                version_id=1, sheet=sheet_name, row_num=ind.row_num, col_num=3
+            ).first()
+            val = cell.final_value if cell else ""
+            if ind.label:
+                result.append(f"  - {ind.label}: {val}")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Ошибка: {e}"
+    finally:
+        session.close()
+
+
+# AI Tools definition for Claude
+AI_TOOLS = [
+    {
+        "name": "search_indicator",
+        "description": "Поиск показателя финансовой модели по названию. Используй когда нужно найти конкретное значение (выручка, прибыль, IRR, площадь и т.д.)",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Название показателя для поиска (например: 'выручка', 'IRR', 'прибыль', 'площадь')"
+                }
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "get_sheet",
+        "description": "Получить данные листа финансовой модели. Листы: МАСТЕР ПЛАН, RESUME, DB, CF, TS1, DETAILS, FACT",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sheet_name": {
+                    "type": "string",
+                    "description": "Название листа (МАСТЕР ПЛАН, RESUME, DB, CF, TS1, DETAILS, FACT)"
+                }
+            },
+            "required": ["sheet_name"]
+        }
+    }
+]
+
+
+def process_tool_call(tool_name: str, tool_input: dict) -> str:
+    """Process AI tool calls"""
+    if tool_name == "search_indicator":
+        return search_indicator_value(tool_input.get("query", ""))
+    elif tool_name == "get_sheet":
+        return get_sheet_summary(tool_input.get("sheet_name", ""))
+    return "Неизвестный инструмент"
+
+
 # ============================================
 # SIDEBAR
 # ============================================
@@ -763,11 +898,13 @@ elif page == "📋 Данные модели":
                             val = cell.final_value
                             if val is not None:
                                 if isinstance(val, float):
-                                    data[col_letter][cell.row_num - 1] = int(val) if val == int(val) else round(val, 2)
+                                    # Convert to string to avoid pyarrow mixed type error
+                                    formatted = int(val) if val == int(val) else round(val, 2)
+                                    data[col_letter][cell.row_num - 1] = str(formatted)
                                 else:
-                                    data[col_letter][cell.row_num - 1] = val
+                                    data[col_letter][cell.row_num - 1] = str(val)
 
-                    df = pd.DataFrame(data)
+                    df = pd.DataFrame(data, dtype=str)
                     df.index = range(1, len(df) + 1)
                     st.dataframe(df, use_container_width=True, height=550)
                     st.caption(f"Ячеек: {len(cells)}")
@@ -804,25 +941,52 @@ elif page == "💬 AI Ассистент":
         with col3:
             eleven_key = st.text_input("11Labs API Key", type="password", placeholder="...", key="eleven_key")
         with col4:
-            voice = st.selectbox("Голос", ["Rachel", "Adam", "Antoni"], key="eleven_voice")
+            eleven_model = st.selectbox("11Labs модель", [
+                "eleven_v3",              # Most expressive with emotions (recommended)
+                "eleven_multilingual_v2", # High quality multilingual, stable
+                "eleven_turbo_v2_5",      # Balance of quality and speed
+            ], key="eleven_model")
+
+        # Popular voices: https://nerdynav.com/elevenlabs-review/
+        voice = st.selectbox("Голос", [
+            "Natasha",      # Valley girl, most popular (6B+ chars)
+            "Aaron",        # Popular among tech YouTubers
+            "Brian",        # Deep male voice
+            "Cassidy",      # American, good for podcasts
+            "David",        # British Storyteller
+            "Bill",         # Audiobook narrator
+            "Charlotte",    # British female
+            "Dorothy",      # Warm female
+            "Freya",        # Nordic female
+            "George",       # British male
+            "Liam",         # American male
+            "Lily",         # British female
+            "Nicole",       # Soft female
+            "Sarah",        # News anchor
+        ], key="eleven_voice")
 
     st.markdown("---")
 
-    # Model context for AI
-    model_context = """
-    Финансовая модель проекта "Касаткина 7":
-    - Выручка: 78 746 млн руб (КВАРТИРЫ 69 491, РИТЕЙЛ 4 251, ПАРКИНГ 5 004)
-    - Инвестиции: 47 751 млн руб
-    - Расходы на продажу: 5 999 млн руб
-    - Проценты: 10 772 млн руб
-    - Налоги: 4 878 млн руб
-    - Прибыль: 9 346 млн руб
-    - Маржа до Н/О: 18%, после Н/О: 12%
-    - IRR проекта: 18%, IRR инвестора: 63%
-    - Площади: ГНС 178 143 м², общая 210 153 м², полезная 133 056 м²
-    - Сроки: начало 01.04.2025, РНС 01.10.2026, РНВ 30.09.2030, окончание продаж 31.12.2031 (6.8 лет)
-    - Ключевая ставка: 20%, ставка бридж: 25%, проектное: 23.8%
-    """
+    # Load model context from database dynamically
+    @st.cache_data(ttl=300)  # Cache for 5 minutes
+    def get_ai_context():
+        return load_model_context_from_db()
+
+    model_context = get_ai_context()
+
+    # System prompt for AI
+    system_prompt = f"""Ты финансовый аналитик, эксперт по девелоперским проектам недвижимости.
+Отвечай на русском языке, кратко и по делу.
+
+У тебя есть доступ к инструментам для поиска данных в финансовой модели:
+- search_indicator: поиск показателя по названию
+- get_sheet: получить данные листа модели
+
+ВСЕГДА используй инструменты для поиска актуальных данных, не выдумывай цифры!
+
+Базовый контекст модели:
+{model_context}
+"""
 
     # Chat
     if "messages" not in st.session_state:
@@ -873,15 +1037,54 @@ elif page == "💬 AI Ассистент":
                     if msg["role"] in ["user", "assistant"]:
                         api_messages.append({"role": msg["role"], "content": msg["content"]})
 
-                with st.spinner("Думаю..."):
+                with st.spinner("Ищу в базе данных..."):
+                    # Initial request with tools
                     response = client.messages.create(
                         model=model,
-                        max_tokens=1024,
-                        system=f"Ты финансовый аналитик. Отвечай на русском языке. Вот данные модели:\n{model_context}",
+                        max_tokens=2048,
+                        system=system_prompt,
+                        tools=AI_TOOLS,
                         messages=api_messages
                     )
-                    answer = response.content[0].text
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
+
+                    # Handle tool use loop (max 5 iterations)
+                    iterations = 0
+                    while response.stop_reason == "tool_use" and iterations < 5:
+                        iterations += 1
+
+                        # Process tool calls
+                        tool_results = []
+                        for block in response.content:
+                            if block.type == "tool_use":
+                                result = process_tool_call(block.name, block.input)
+                                tool_results.append({
+                                    "type": "tool_result",
+                                    "tool_use_id": block.id,
+                                    "content": result
+                                })
+
+                        # Continue conversation with tool results
+                        api_messages.append({"role": "assistant", "content": response.content})
+                        api_messages.append({"role": "user", "content": tool_results})
+
+                        response = client.messages.create(
+                            model=model,
+                            max_tokens=2048,
+                            system=system_prompt,
+                            tools=AI_TOOLS,
+                            messages=api_messages
+                        )
+
+                    # Extract final text answer
+                    answer = ""
+                    for block in response.content:
+                        if hasattr(block, "text"):
+                            answer += block.text
+
+                    if answer:
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                    else:
+                        st.session_state.messages.append({"role": "assistant", "content": "Не удалось получить ответ"})
 
             except Exception as e:
                 st.session_state.messages.append({"role": "assistant", "content": f"Ошибка API: {str(e)}"})
