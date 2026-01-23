@@ -807,13 +807,28 @@ elif page == "💬 AI Ассистент":
             eleven_key = st.text_input("11Labs API Key", type="password", placeholder="...", key="eleven_key")
         with col4:
             eleven_model = st.selectbox("11Labs модель", [
-                "eleven_flash_v2_5",      # Fastest, 75ms latency, for real-time
-                "eleven_v3",              # Most expressive with emotions
-                "eleven_multilingual_v2", # High quality multilingual
+                "eleven_v3",              # Most expressive with emotions (recommended)
+                "eleven_multilingual_v2", # High quality multilingual, stable
                 "eleven_turbo_v2_5",      # Balance of quality and speed
             ], key="eleven_model")
 
-        voice = st.selectbox("Голос", ["Rachel", "Adam", "Antoni", "Bella", "Josh"], key="eleven_voice")
+        # Popular voices: https://nerdynav.com/elevenlabs-review/
+        voice = st.selectbox("Голос", [
+            "Natasha",      # Valley girl, most popular (6B+ chars)
+            "Aaron",        # Popular among tech YouTubers
+            "Brian",        # Deep male voice
+            "Cassidy",      # American, good for podcasts
+            "David",        # British Storyteller
+            "Bill",         # Audiobook narrator
+            "Charlotte",    # British female
+            "Dorothy",      # Warm female
+            "Freya",        # Nordic female
+            "George",       # British male
+            "Liam",         # American male
+            "Lily",         # British female
+            "Nicole",       # Soft female
+            "Sarah",        # News anchor
+        ], key="eleven_voice")
 
     st.markdown("---")
 
