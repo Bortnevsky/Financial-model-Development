@@ -1437,6 +1437,7 @@ elif page == "💬 AI Ассистент":
 
                     # Handle tool use loop (max 5 iterations)
                     iterations = 0
+                    last_tool_results = []
                     while response.stop_reason == "tool_use" and iterations < 5:
                         iterations += 1
 
@@ -1450,6 +1451,7 @@ elif page == "💬 AI Ассистент":
                                     "tool_use_id": block.id,
                                     "content": result
                                 })
+                                last_tool_results.append(f"[{block.name}]: {result[:200]}...")
 
                         # Continue conversation with tool results
                         api_messages.append({"role": "assistant", "content": response.content})
@@ -1468,6 +1470,10 @@ elif page == "💬 AI Ассистент":
                     for block in response.content:
                         if hasattr(block, "text"):
                             answer += block.text
+
+                    # If no text answer but we have tool results, show them
+                    if not answer and last_tool_results:
+                        answer = "Найденные данные:\n" + "\n".join(last_tool_results[:3])
 
                     if answer:
                         st.session_state.messages.append({"role": "assistant", "content": answer})
@@ -1516,7 +1522,9 @@ elif page == "💬 AI Ассистент":
                             except Exception as voice_err:
                                 st.warning(f"Ошибка озвучки: {voice_err}")
                     else:
-                        st.session_state.messages.append({"role": "assistant", "content": "Не удалось получить ответ"})
+                        # Try to get any info from the response
+                        debug_info = f"stop_reason: {response.stop_reason}, iterations: {iterations}"
+                        st.session_state.messages.append({"role": "assistant", "content": f"Не удалось получить текстовый ответ. Попробуйте переформулировать вопрос. ({debug_info})"})
 
             except Exception as e:
                 st.session_state.messages.append({"role": "assistant", "content": f"Ошибка API: {str(e)}"})
