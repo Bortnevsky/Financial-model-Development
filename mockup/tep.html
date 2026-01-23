@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM Pro — ТЭП — Касаткина 7</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h4v4H7V7zm0 6h4v4H7v-4zm6-6h4v10h-4V7z"/></svg>
+                </div>
+                FM Pro
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Портфель</div>
+                <a href="projects.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                    Список проектов
+                </a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">Касаткина 7</div>
+                <a href="dashboard.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Dashboard
+                </a>
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    Формы ввода
+                </div>
+                <a href="chat.html" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+                    AI Ассистент
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="breadcrumb">
+                        <a href="projects.html">Проекты</a>
+                        <span>/</span>
+                        <a href="dashboard.html">Касаткина 7</a>
+                        <span>/</span>
+                        <span>ТЭП</span>
+                    </div>
+                    <span class="status status-warning">Черновик</span>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-ghost">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z"/></svg>
+                        Сохранить
+                    </button>
+                    <a href="costs.html" class="btn btn-primary">
+                        Далее: Расходы
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Wizard Steps -->
+                <div class="wizard-steps">
+                    <a href="projects.html" class="step completed">
+                        <span class="step-num">✓</span>
+                        Создание
+                    </a>
+                    <div class="step active">
+                        <span class="step-num">2</span>
+                        ТЭП
+                    </div>
+                    <a href="costs.html" class="step">
+                        <span class="step-num">3</span>
+                        Расходы
+                    </a>
+                    <a href="sales.html" class="step">
+                        <span class="step-num">4</span>
+                        Продажи
+                    </a>
+                    <a href="dashboard.html" class="step">
+                        <span class="step-num">5</span>
+                        Итоги
+                    </a>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Общая площадь</div>
+                        <div class="summary-value">140 714 м²</div>
+                        <div class="summary-sub">наземная + подземная</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Продаваемая площадь</div>
+                        <div class="summary-value">97 514 м²</div>
+                        <div class="summary-sub">LF: 30%</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Площадь ЗУ</div>
+                        <div class="summary-value">50 873 м²</div>
+                        <div class="summary-sub">5.09 га</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Плотность</div>
+                        <div class="summary-value">29 351</div>
+                        <div class="summary-sub">м²/га (по ГНС)</div>
+                    </div>
+                </div>
+
+                <!-- Main Form: Project Basics -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Основные параметры</div>
+                            <div class="form-subtitle">Земельный участок и плотность</div>
+                        </div>
+                        <span class="tag tag-blue">ПК1</span>
+                    </div>
+
+                    <div class="form-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Адрес проекта</label>
+                                <input type="text" class="form-input" value="ул. Касаткина, вл. 7" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Площадь ЗУ, м² <span class="required">*</span></label>
+                                <input type="text" class="form-input" value="50 873" id="zu-area" />
+                                <div class="quick-buttons">
+                                    <button class="quick-btn" onclick="fillFromCadastre()">📋 Из кадастра</button>
+                                    <button class="quick-btn">📄 Из ГПЗУ</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Плотность застройки, м²/га</label>
+                                <input type="text" class="form-input" value="29 351" />
+                                <div class="quick-buttons">
+                                    <button class="quick-btn">25 000</button>
+                                    <button class="quick-btn selected">29 351</button>
+                                    <button class="quick-btn">30 000</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ГНС (наземная), м²</label>
+                                <input type="text" class="form-input" value="149 220" style="background: var(--bg-dark); color: var(--text-muted);" readonly />
+                                <div class="form-hint">= Площадь ЗУ × Плотность / 10 000</div>
+                            </div>
+                        </div>
+
+                        <!-- AI Hint -->
+                        <div class="ai-hint" id="ai-hint-zu" style="display: none;">
+                            <div class="ai-icon">
+                                <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/></svg>
+                            </div>
+                            <div class="ai-content">
+                                <div class="ai-title">Найден кадастровый участок</div>
+                                <div class="ai-text">
+                                    Кадастровый номер: <strong>77:02:0021001:1234</strong><br>
+                                    Площадь по кадастру: <strong>50 873 м²</strong><br>
+                                    ВРИ: Многоэтажная жилая застройка<br><br>
+                                    <a href="#" onclick="applyZU(); return false;">✓ Применить данные</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nazemka -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Наземная часть — Виды ОН</div>
+                            <div class="form-subtitle">Площади по видам объектов недвижимости</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="form-hint">LF (стены):</span>
+                            <div class="quick-buttons">
+                                <button class="quick-btn">28%</button>
+                                <button class="quick-btn selected">30%</button>
+                                <button class="quick-btn">32%</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-body" style="padding: 0;">
+                        <div class="tabs" style="padding: 0 24px;">
+                            <div class="tab active">По видам ОН</div>
+                            <div class="tab">Сводная</div>
+                        </div>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 180px;">Вид ОН</th>
+                                    <th>Общая, м²</th>
+                                    <th>Продаваемая, м²</th>
+                                    <th style="width: 100px;">LF, %</th>
+                                    <th style="width: 100px;">Кол-во</th>
+                                    <th style="width: 100px;">Ср. лот, м²</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="row-label">
+                                            <span style="color: var(--accent);">●</span>
+                                            КВАРТИРЫ
+                                        </div>
+                                    </td>
+                                    <td><input type="text" value="130 000" /></td>
+                                    <td><input type="text" value="91 000" /></td>
+                                    <td class="cell-calc">30%</td>
+                                    <td><input type="text" value="1 717" /></td>
+                                    <td class="cell-calc">53</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-label">
+                                            <span style="color: var(--success);">●</span>
+                                            РИТЕЙЛ
+                                        </div>
+                                    </td>
+                                    <td><input type="text" value="9 306" /></td>
+                                    <td><input type="text" value="6 514" /></td>
+                                    <td class="cell-calc">30%</td>
+                                    <td><input type="text" value="66" /></td>
+                                    <td class="cell-calc">99</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="row-label">
+                                            <span style="color: var(--warning);">●</span>
+                                            СОШ+ДОО
+                                        </div>
+                                    </td>
+                                    <td><input type="text" value="0" /></td>
+                                    <td class="cell-calc">—</td>
+                                    <td class="cell-calc">—</td>
+                                    <td><input type="text" value="1 000" placeholder="мест" /></td>
+                                    <td class="cell-calc">—</td>
+                                </tr>
+                                <tr class="row-total">
+                                    <td><strong>НАЗЕМНАЯ ЧАСТЬ</strong></td>
+                                    <td><strong>139 306</strong></td>
+                                    <td><strong>97 514</strong></td>
+                                    <td><strong>30%</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Podzemka -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <div>
+                            <div class="form-title">Подземная часть — Паркинг</div>
+                            <div class="form-subtitle">Машиноместа и коэффициент обеспеченности</div>
+                        </div>
+                    </div>
+
+                    <div class="form-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Площадь подземки, м²</label>
+                                <input type="text" class="form-input" value="28 536" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Площадь на 1 м/м, м²</label>
+                                <input type="text" class="form-input" value="41" />
+                                <div class="quick-buttons">
+                                    <button class="quick-btn">35</button>
+                                    <button class="quick-btn selected">41</button>
+                                    <button class="quick-btn">45</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Коэфф. обеспеченности</label>
+                                <input type="text" class="form-input" value="0.41" />
+                                <div class="quick-buttons">
+                                    <button class="quick-btn">0.3</button>
+                                    <button class="quick-btn selected">0.4</button>
+                                    <button class="quick-btn">0.5</button>
+                                    <button class="quick-btn">0.6</button>
+                                </div>
+                                <div class="form-hint">м/м на квартиру</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Кол-во машиномест</label>
+                                <input type="text" class="form-input" value="696" style="background: var(--bg-dark); color: var(--text-muted);" readonly />
+                                <div class="form-hint">= 1 717 кв. × 0.41 = 704 → округл. до 696</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary -->
+                <div class="ai-hint">
+                    <div class="ai-icon">
+                        <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    </div>
+                    <div class="ai-content">
+                        <div class="ai-title">ТЭП заполнены корректно</div>
+                        <div class="ai-text">
+                            Плотность 29 351 м²/га — в пределах нормы для бизнес-класса в СВАО.<br>
+                            LF 30% — стандартный для монолитного дома.<br>
+                            Обеспеченность паркингом 0.41 м/м — соответствует нормативу.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="actions-bar">
+                <div class="actions-left">
+                    <a href="projects.html" class="btn btn-ghost">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                        К списку проектов
+                    </a>
+                </div>
+                <div class="actions-right">
+                    <button class="btn btn-ghost">Сохранить черновик</button>
+                    <a href="costs.html" class="btn btn-primary">
+                        Далее: Расходы
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Quick buttons
+        document.querySelectorAll('.quick-buttons').forEach(group => {
+            group.querySelectorAll('.quick-btn').forEach(btn => {
+                if (!btn.onclick) {
+                    btn.addEventListener('click', () => {
+                        group.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                    });
+                }
+            });
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tabs').forEach(tabs => {
+            tabs.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                });
+            });
+        });
+
+        // Simulate cadastre lookup
+        function fillFromCadastre() {
+            document.getElementById('ai-hint-zu').style.display = 'flex';
+        }
+
+        function applyZU() {
+            document.getElementById('zu-area').value = '50 873';
+            document.getElementById('ai-hint-zu').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

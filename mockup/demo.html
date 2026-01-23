@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FM AI Demo - Friday Presentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0d0d0d;
+            color: #f5f5f5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Settings Modal */
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-overlay.open {
+            display: flex;
+        }
+
+        .settings-modal {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            padding: 28px;
+            animation: modalIn 0.3s ease-out;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .settings-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            color: #f5f5f5;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .settings-input:focus {
+            border-color: #f59e0b;
+        }
+
+        .settings-input::placeholder {
+            color: #555;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-row-label {
+            font-size: 14px;
+        }
+
+        .settings-row-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            width: 48px;
+            height: 26px;
+            background: #3a3a3a;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle.on {
+            background: #f59e0b;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.2s;
+        }
+
+        .toggle.on::after {
+            left: 24px;
+        }
+
+        /* Select */
+        .settings-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            color: #f5f5f5;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Startup Screen */
+        .startup-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .bg-glow-1 {
+            top: -100px;
+            right: -100px;
+            background: #f59e0b;
+        }
+
+        .bg-glow-2 {
+            bottom: -100px;
+            left: -100px;
+            background: #3b82f6;
+        }
+
+        .startup-modal {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalAppear 0.4s ease-out;
+            position: relative;
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .startup-header {
+            padding: 32px 32px 20px;
+            text-align: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+        }
+
+        .logo-text {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f5f5f5 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .settings-gear {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-gear:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .startup-body {
+            padding: 0 32px 32px;
+        }
+
+        .greeting {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .greeting-text {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .greeting-subtext {
+            color: #888;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* Demo Scenarios Grid */
+        .scenarios-title {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .scenario-card {
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 14px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .scenario-card:hover {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .scenario-card.active {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .scenario-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .scenario-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .scenario-desc {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .scenario-badge {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        /* Voice Status */
+        .voice-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #f59e0b;
+        }
+
+        .voice-status.speaking {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .voice-status.off {
+            background: rgba(255,255,255,0.05);
+            color: #666;
+        }
+
+        /* Start Button */
+        .start-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            border-radius: 14px;
+            color: #000;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Chat Screen */
+        .chat-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .chat-screen.active {
+            display: flex;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-radius: 10px;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #f5f5f5;
+        }
+
+        .header-info h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header-info span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .header-right {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-toggle {
+            width: 40px;
+            height: 40px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
+            color: #f59e0b;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-toggle.muted {
+            background: rgba(255,255,255,0.05);
+            border-color: #3a3a3a;
+            color: #666;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageAppear 0.3s ease-out;
+        }
+
+        .message-assistant {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px 20px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .message-user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message-user .message-content {
+            background: rgba(245, 158, 11, 0.1);
+            max-width: 80%;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Tables (NOT voiced) */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+            background: #252525;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px 14px;
+            background: #2a2a2a;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .data-table th:not(:first-child) {
+            text-align: right;
+        }
+
+        .data-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .data-table td:not(:first-child) {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table .highlight {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .data-table .positive {
+            color: #22c55e;
+        }
+
+        .data-table .negative {
+            color: #ef4444;
+        }
+
+        /* Document Card */
+        .document-card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid #3a3a3a;
+        }
+
+        .document-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .document-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .document-icon {
+            opacity: 0.7;
+        }
+
+        .document-label {
+            color: #888;
+            min-width: 100px;
+        }
+
+        .document-value {
+            color: #f5f5f5;
+            font-weight: 500;
+        }
+
+        .document-value.amount {
+            color: #f59e0b;
+            font-size: 16px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid #3a3a3a;
+            color: #a0a0a0;
+        }
+
+        .action-btn.secondary:hover {
+            border-color: #f59e0b;
+            color: #f5f5f5;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .status-badge.warning {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+        }
+
+        .status-green {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: rgba(34, 197, 94, 0.2);
+            border-radius: 50%;
+            font-size: 12px;
+        }
+
+        .status-yellow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: rgba(234, 179, 8, 0.2);
+            border-radius: 50%;
+            font-size: 12px;
+        }
+
+        /* Warning/Success blocks */
+        .warning-block {
+            background: rgba(234, 179, 8, 0.1);
+            border-left: 3px solid #eab308;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .success-block {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Conclusion */
+        .conclusion {
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .conclusion strong {
+            color: #f59e0b;
+        }
+
+        /* Typing */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+            margin-top: auto;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #f5f5f5;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #f59e0b;
+        }
+
+        .chat-input::placeholder {
+            color: #666;
+        }
+
+        .mic-btn, .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mic-btn {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+
+        .mic-btn:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border: none;
+            color: #000;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Speaking indicator on avatar */
+        .avatar.speaking {
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
+            animation: speakPulse 1s infinite;
+        }
+
+        @keyframes speakPulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.2); }
+        }
+
+        /* API Key Status */
+        .api-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+
+        .api-status.connected {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .api-status.disconnected {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        /* ============ DASHBOARD STYLES ============ */
+        .dashboard-screen {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-screen.active {
+            display: block;
+        }
+
+        .dash-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 24px;
+        }
+
+        .dash-header-info h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .dash-status {
+            font-size: 13px;
+            color: #22c55e;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .kpi-card.highlight {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kpi-value.green { color: #22c55e; }
+
+        .kpi-sub {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .dash-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .dash-card {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .dash-card.ai-card {
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        .dash-card-header {
+            padding: 14px 18px;
+            background: #1e1e1e;
+            border-bottom: 1px solid #3a3a3a;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-avatar-small {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .ai-avatar-small.speaking {
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
+            animation: speakPulse 1s infinite;
+        }
+
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .dash-table th {
+            text-align: left;
+            padding: 10px 16px;
+            color: #888;
+            font-weight: 500;
+            background: #1e1e1e;
+        }
+
+        .dash-table td {
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .dash-table .right { text-align: right; }
+        .dash-table .green { color: #22c55e; }
+        .dash-table .red { color: #ef4444; }
+        .dash-table tr.total { background: rgba(245, 158, 11, 0.1); }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .dot.amber { background: #f59e0b; }
+        .dot.green { background: #22c55e; }
+        .dot.blue { background: #3b82f6; }
+
+        .ai-chat-body {
+            padding: 18px;
+        }
+
+        .ai-message {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .ai-message p {
+            margin-bottom: 10px;
+        }
+
+        .ai-point {
+            padding-left: 8px;
+        }
+        .ai-point.green { color: #22c55e; }
+        .ai-point.amber { color: #f59e0b; }
+
+        .ai-rec {
+            background: rgba(245, 158, 11, 0.1);
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .ai-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .ai-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #3a3a3a;
+            background: #1e1e1e;
+            color: #f5f5f5;
+        }
+
+        .ai-btn:hover {
+            border-color: #f59e0b;
+        }
+
+        .ai-btn.primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .ai-btn.primary:hover {
+            transform: translateY(-1px);
+        }
+
+        .quick-actions {
+            padding: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            padding: 12px;
+            background: #1e1e1e;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            color: #f5f5f5;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:hover {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+
+        @media (max-width: 900px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .dash-two-col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <!-- Settings Modal -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-modal">
+            <div class="settings-header">
+                <h2>&#9881; Настройки</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">ElevenLabs API Key</label>
+                <input type="password" class="settings-input" id="elevenLabsKey"
+                       placeholder="sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                <div class="api-status disconnected" id="apiStatus">
+                    <span>&#9679;</span> Не подключено
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">Голос (выбор из списка)</label>
+                <select class="settings-select" id="voiceSelect" onchange="onVoiceSelectChange()">
+                    <option value="pFZP5JQG7iQjIQuC4Bku">Lily (Female, Russian)</option>
+                    <option value="TX3LPaxmHKxFdv7VOQHJ">Liam (Male, Russian)</option>
+                    <option value="XrExE9yKIg1WjnnlVkGX">Matilda (Female, Calm)</option>
+                    <option value="onwK4e9ZLuTAKqWW03F9">Daniel (Male, Deep)</option>
+                    <option value="custom">-- Свой Voice ID --</option>
+                </select>
+            </div>
+
+            <div class="settings-group" id="customVoiceGroup" style="display: none;">
+                <label class="settings-label">Custom Voice ID (из ElevenLabs)</label>
+                <input type="text" class="settings-input" id="customVoiceId"
+                       placeholder="Вставьте Voice ID, например: pFZP5JQG7iQjIQuC4Bku">
+                <div style="font-size: 11px; color: #666; margin-top: 6px;">
+                    Найти Voice ID: ElevenLabs → Voices → Voice settings → Voice ID
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Озвучка ответов</div>
+                    <div class="settings-row-desc">Автоматически озвучивать ответы ассистента</div>
+                </div>
+                <div class="toggle on" id="voiceToggle" onclick="toggleVoice()"></div>
+            </div>
+
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Пропускать таблицы</div>
+                    <div class="settings-row-desc">Не озвучивать содержимое таблиц</div>
+                </div>
+                <div class="toggle on" id="skipTablesToggle" onclick="toggleSkipTables()"></div>
+            </div>
+
+            <button class="save-btn" onclick="saveSettings()">Сохранить настройки</button>
+        </div>
+    </div>
+
+    <!-- Startup Screen -->
+    <div class="startup-screen" id="startupScreen">
+        <div class="startup-modal">
+            <button class="settings-gear" onclick="openSettings()">&#9881;</button>
+
+            <div class="startup-header">
+                <div class="logo-container">
+                    <div class="logo-icon">&#127975;</div>
+                    <span class="logo-text">FM AI Assistant</span>
+                </div>
+                <div class="subtitle">Демо для презентации</div>
+            </div>
+
+            <div class="startup-body">
+                <div class="greeting">
+                    <div class="greeting-text">Привет, Катя!</div>
+                    <div class="greeting-subtext">Выбери сценарий демонстрации</div>
+                </div>
+
+                <div class="voice-status" id="voiceStatusMain">
+                    <span>&#128266;</span> Голос: включён
+                </div>
+
+                <div class="scenarios-title">Демо-сценарии</div>
+
+                <div class="scenarios-grid">
+                    <div class="scenario-card" data-scenario="dashboard" onclick="selectScenario('dashboard')">
+                        <div class="scenario-icon">&#128202;</div>
+                        <div class="scenario-name">Dashboard проекта</div>
+                        <div class="scenario-desc">KPI, P&L, AI анализ</div>
+                    </div>
+                    <div class="scenario-card" data-scenario="fact" onclick="selectScenario('fact')">
+                        <div class="scenario-icon">&#128229;</div>
+                        <div class="scenario-name">Разнесение факта <span class="scenario-badge">3</span></div>
+                        <div class="scenario-desc">Обработка первички из 1С</div>
+                    </div>
+                    <div class="scenario-card" data-scenario="wave" onclick="selectScenario('wave')">
+                        <div class="scenario-icon">&#127754;</div>
+                        <div class="scenario-name">Корректировка волной</div>
+                        <div class="scenario-desc">Перераспределение плана</div>
+                    </div>
+                    <div class="scenario-card" data-scenario="analytics" onclick="selectScenario('analytics')">
+                        <div class="scenario-icon">&#128200;</div>
+                        <div class="scenario-name">Аналитика Тушино</div>
+                        <div class="scenario-desc">ФЭП + сценарий инвестора</div>
+                    </div>
+                    <div class="scenario-card" data-scenario="covenants" onclick="selectScenario('covenants')">
+                        <div class="scenario-icon">&#128203;</div>
+                        <div class="scenario-name">Проверка ковенантов</div>
+                        <div class="scenario-desc">Статус и эскроу</div>
+                    </div>
+                    <div class="scenario-card" data-scenario="comparison" onclick="selectScenario('comparison')">
+                        <div class="scenario-icon">&#128200;</div>
+                        <div class="scenario-name">Сравнение со входом</div>
+                        <div class="scenario-desc">Вход vs текущая модель</div>
+                    </div>
+                </div>
+
+                <button class="start-btn" id="startBtn" onclick="startDemo()" disabled>
+                    <span>&#9658;</span>
+                    Выбери сценарий
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div class="chat-screen" id="chatScreen">
+        <div class="chat-header">
+            <button class="back-btn" onclick="goBack()">&#8592;</button>
+            <div class="header-info">
+                <h1 id="chatTitle">&#129302; AI Финансовый ассистент</h1>
+                <span id="chatSubtitle">Демо-сценарий</span>
+            </div>
+            <div class="header-right">
+                <button class="voice-toggle" id="voiceToggleBtn" onclick="toggleVoiceInChat()">
+                    &#128266;
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" class="chat-input" placeholder="Введите сообщение..." id="chatInput">
+                <button class="mic-btn">&#127908;</button>
+                <button class="send-btn" onclick="sendMessage()">&#10148;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div class="dashboard-screen" id="dashboardScreen">
+        <div class="dash-header">
+            <button class="back-btn" onclick="goBack()">&#8592;</button>
+            <div class="dash-header-info">
+                <h1>&#127975; Касаткина 7</h1>
+                <span class="dash-status">&#9989; Модель заполнена</span>
+            </div>
+            <div class="header-right">
+                <button class="voice-toggle" id="dashVoiceToggle" onclick="toggleVoiceInDash()">
+                    &#128266;
+                </button>
+            </div>
+        </div>
+
+        <div class="dash-content">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card highlight">
+                    <div class="kpi-label">Выручка</div>
+                    <div class="kpi-value green">73.5</div>
+                    <div class="kpi-sub">млрд ₽</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Расходы</div>
+                    <div class="kpi-value">35.0</div>
+                    <div class="kpi-sub">млрд ₽</div>
+                </div>
+                <div class="kpi-card highlight">
+                    <div class="kpi-label">Маржа</div>
+                    <div class="kpi-value green">38.5</div>
+                    <div class="kpi-sub">млрд ₽ (52%)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Площадь</div>
+                    <div class="kpi-value">97.5</div>
+                    <div class="kpi-sub">тыс. м²</div>
+                </div>
+            </div>
+
+            <div class="dash-two-col">
+                <!-- Left: Tables -->
+                <div class="dash-left">
+                    <div class="dash-card">
+                        <div class="dash-card-header">Структура выручки</div>
+                        <table class="dash-table">
+                            <thead><tr><th>Вид ОН</th><th>Площадь</th><th>Выручка</th><th>Доля</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="dot amber"></span> Квартиры</td><td>91 000 м²</td><td>65.4 млрд</td><td>89%</td></tr>
+                                <tr><td><span class="dot green"></span> Ритейл</td><td>6 514 м²</td><td>4.9 млрд</td><td>7%</td></tr>
+                                <tr><td><span class="dot blue"></span> Паркинг</td><td>696 м.м.</td><td>3.1 млрд</td><td>4%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="dash-card">
+                        <div class="dash-card-header">P&L Сводка</div>
+                        <table class="dash-table">
+                            <tbody>
+                                <tr><td>Выручка</td><td class="green right">73 447 млн</td></tr>
+                                <tr><td>Себестоимость</td><td class="red right">−35 039 млн</td></tr>
+                                <tr class="total"><td><strong>Валовая прибыль</strong></td><td class="green right"><strong>38 408 млн</strong></td></tr>
+                                <tr><td>Маржа</td><td class="right">52.3%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right: AI Chat -->
+                <div class="dash-right">
+                    <div class="dash-card ai-card">
+                        <div class="dash-card-header">
+                            <span id="dashAiAvatar" class="ai-avatar-small">&#129302;</span>
+                            AI Ассистент
+                        </div>
+                        <div class="ai-chat-body">
+                            <div class="ai-message">
+                                <p><strong>Катя, привет!</strong> Посмотрела модель по Касаткина 7:</p>
+                                <p class="ai-point green">&#10003; Маржа 52% — выше рынка</p>
+                                <p class="ai-point green">&#10003; Себестоимость 359 т.р/м² в норме</p>
+                                <p class="ai-point amber">&#9888; Паркинг 0.41 — риск при низком спросе</p>
+                                <p class="ai-rec">&#128161; Рекомендую сценарий +10% к ценам. Посчитать?</p>
+                            </div>
+                            <div class="ai-buttons">
+                                <button class="ai-btn primary" onclick="selectScenario('analytics'); startDemo();">Да, посчитай</button>
+                                <button class="ai-btn" onclick="selectScenario('fact'); startDemo();">Разнести факт</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dash-card">
+                        <div class="dash-card-header">Быстрые действия</div>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="selectScenario('wave'); startDemo();">&#127754; Волна</button>
+                            <button class="quick-action-btn" onclick="selectScenario('covenants'); startDemo();">&#128203; Ковенанты</button>
+                            <button class="quick-action-btn" onclick="selectScenario('comparison'); startDemo();">&#128200; Сравнение</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ SETTINGS ============
+        let settings = {
+            elevenLabsKey: localStorage.getItem('elevenLabsKey') || '',
+            voiceId: localStorage.getItem('voiceId') || 'pFZP5JQG7iQjIQuC4Bku',
+            customVoiceId: localStorage.getItem('customVoiceId') || '',
+            useCustomVoice: localStorage.getItem('useCustomVoice') === 'true',
+            voiceEnabled: localStorage.getItem('voiceEnabled') !== 'false',
+            skipTables: localStorage.getItem('skipTables') !== 'false'
+        };
+
+        let currentScenario = null;
+        let conversationStep = 0;
+        let isSpeaking = false;
+        let audioQueue = [];
+        let currentAudio = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('elevenLabsKey').value = settings.elevenLabsKey;
+            document.getElementById('customVoiceId').value = settings.customVoiceId;
+
+            if (settings.useCustomVoice && settings.customVoiceId) {
+                document.getElementById('voiceSelect').value = 'custom';
+                document.getElementById('customVoiceGroup').style.display = 'block';
+            } else {
+                document.getElementById('voiceSelect').value = settings.voiceId;
+            }
+
+            updateVoiceToggles();
+            updateApiStatus();
+        });
+
+        function onVoiceSelectChange() {
+            const select = document.getElementById('voiceSelect');
+            const customGroup = document.getElementById('customVoiceGroup');
+
+            if (select.value === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+
+        function openSettings() {
+            document.getElementById('settingsOverlay').classList.add('open');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsOverlay').classList.remove('open');
+        }
+
+        function toggleVoice() {
+            const toggle = document.getElementById('voiceToggle');
+            toggle.classList.toggle('on');
+            settings.voiceEnabled = toggle.classList.contains('on');
+        }
+
+        function toggleSkipTables() {
+            const toggle = document.getElementById('skipTablesToggle');
+            toggle.classList.toggle('on');
+            settings.skipTables = toggle.classList.contains('on');
+        }
+
+        function updateVoiceToggles() {
+            document.getElementById('voiceToggle').classList.toggle('on', settings.voiceEnabled);
+            document.getElementById('skipTablesToggle').classList.toggle('on', settings.skipTables);
+
+            const mainStatus = document.getElementById('voiceStatusMain');
+            if (settings.voiceEnabled && settings.elevenLabsKey) {
+                mainStatus.innerHTML = '<span>&#128266;</span> Голос: включён';
+                mainStatus.classList.remove('off');
+            } else {
+                mainStatus.innerHTML = '<span>&#128263;</span> Голос: выключен';
+                mainStatus.classList.add('off');
+            }
+        }
+
+        function updateApiStatus() {
+            const status = document.getElementById('apiStatus');
+            if (settings.elevenLabsKey && settings.elevenLabsKey.length > 10) {
+                status.className = 'api-status connected';
+                status.innerHTML = '<span>&#9679;</span> API подключен';
+            } else {
+                status.className = 'api-status disconnected';
+                status.innerHTML = '<span>&#9679;</span> Не подключено';
+            }
+        }
+
+        function saveSettings() {
+            settings.elevenLabsKey = document.getElementById('elevenLabsKey').value;
+
+            const selectValue = document.getElementById('voiceSelect').value;
+            const customVoice = document.getElementById('customVoiceId').value.trim();
+
+            if (selectValue === 'custom' && customVoice) {
+                settings.useCustomVoice = true;
+                settings.customVoiceId = customVoice;
+                settings.voiceId = customVoice; // Use custom as active voice
+            } else {
+                settings.useCustomVoice = false;
+                settings.voiceId = selectValue;
+            }
+
+            localStorage.setItem('elevenLabsKey', settings.elevenLabsKey);
+            localStorage.setItem('voiceId', settings.voiceId);
+            localStorage.setItem('customVoiceId', settings.customVoiceId);
+            localStorage.setItem('useCustomVoice', settings.useCustomVoice);
+            localStorage.setItem('voiceEnabled', settings.voiceEnabled);
+            localStorage.setItem('skipTables', settings.skipTables);
+
+            updateApiStatus();
+            updateVoiceToggles();
+            closeSettings();
+        }
+
+        // ============ SCENARIO SELECTION ============
+        function selectScenario(scenario) {
+            document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[data-scenario="${scenario}"]`).classList.add('active');
+            currentScenario = scenario;
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = false;
+
+            const names = {
+                dashboard: 'Запустить: Dashboard',
+                fact: 'Запустить: Разнесение факта',
+                wave: 'Запустить: Волна',
+                analytics: 'Запустить: Аналитика',
+                covenants: 'Запустить: Ковенанты',
+                comparison: 'Запустить: Сравнение'
+            };
+            btn.innerHTML = `<span>&#9658;</span> ${names[scenario]}`;
+        }
+
+        // ============ DEMO START ============
+        function startDemo() {
+            if (!currentScenario) return;
+
+            if (currentScenario === 'wave') {
+                // Wave has its own page
+                window.location.href = 'wave.html';
+                return;
+            }
+
+            document.getElementById('startupScreen').style.display = 'none';
+
+            if (currentScenario === 'dashboard') {
+                document.getElementById('dashboardScreen').classList.add('active');
+                // Speak dashboard AI message if voice enabled
+                if (settings.voiceEnabled && settings.elevenLabsKey) {
+                    setTimeout(() => {
+                        speakDashboard('Катя, привет! Посмотрела модель по Касаткина 7. Маржа 52 процента — выше рынка. Себестоимость в норме. Но обрати внимание на паркинг — обеспеченность 0.41, риск при низком спросе. Рекомендую сценарий плюс 10 процентов к ценам. Посчитать?');
+                    }, 500);
+                }
+                return;
+            }
+
+            document.getElementById('chatScreen').classList.add('active');
+
+            const titles = {
+                fact: 'Разнесение факта • Касаткина',
+                analytics: 'Аналитика • Тушино',
+                covenants: 'Ковенанты • Проспект Мира',
+                comparison: 'Сравнение версий • Проспект Мира'
+            };
+            document.getElementById('chatSubtitle').textContent = titles[currentScenario];
+
+            conversationStep = 0;
+            document.getElementById('chatMessages').innerHTML = '';
+
+            // Start conversation
+            setTimeout(() => startConversation(), 500);
+        }
+
+        function goBack() {
+            stopSpeaking();
+            document.getElementById('chatScreen').classList.remove('active');
+            document.getElementById('dashboardScreen').classList.remove('active');
+            document.getElementById('startupScreen').style.display = 'flex';
+        }
+
+        // ============ CONVERSATIONS ============
+        const conversations = {
+            fact: [
+                {
+                    type: 'assistant',
+                    text: 'Катя, привет! Тут пришла первичка — факт. Давай разнесём?',
+                    voice: 'Катя, привет! Тут пришла первичка — факт. Давай разнесём?'
+                },
+                {
+                    type: 'assistant',
+                    text: `Слушай, тут договор на услуги по дизайну офиса продаж для проекта Касаткина.
+
+<div class="document-card">
+    <div class="document-row">
+        <span class="document-icon">&#128196;</span>
+        <span class="document-label">Документ:</span>
+        <span class="document-value">Платёжное поручение #1247</span>
+    </div>
+    <div class="document-row">
+        <span class="document-icon">&#128176;</span>
+        <span class="document-label">Сумма:</span>
+        <span class="document-value amount">3 000 000 &#8381;</span>
+    </div>
+    <div class="document-row">
+        <span class="document-icon">&#128197;</span>
+        <span class="document-label">Дата:</span>
+        <span class="document-value">21.01.2026</span>
+    </div>
+    <div class="document-row">
+        <span class="document-icon">&#127970;</span>
+        <span class="document-label">Контрагент:</span>
+        <span class="document-value">ООО "Дизайн Студио"</span>
+    </div>
+</div>
+
+Предлагаю разнести на проект Касаткина, очереди 1 и 2 пропорционально метрам, статья: Коммерческие, Маркетинг, Офис продаж. Норм?`,
+                    voice: 'Слушай, тут договор на услуги по дизайну офиса продаж для проекта Касаткина. Сумма 3 миллиона рублей. Предлагаю разнести на проект Касаткина, очереди 1 и 2 пропорционально метрам, статья: Коммерческие, Маркетинг, Офис продаж. Норм?',
+                    buttons: ['✓ Да, разноси', 'Изменить статью']
+                },
+                {
+                    type: 'user',
+                    text: 'А сколько уже по этой статье потрачено?'
+                },
+                {
+                    type: 'assistant',
+                    text: `Смотри, вот раскладка по бюджету:
+
+<table class="data-table">
+    <thead>
+        <tr><th>Статья</th><th>Бюджет</th><th>Факт</th><th>Остаток</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Коммерческие расходы</td><td>100 млн</td><td>15 млн</td><td>85 млн</td></tr>
+        <tr><td>&nbsp;&nbsp;↳ Маркетинг</td><td>50 млн</td><td>6 млн</td><td>44 млн</td></tr>
+        <tr style="background: rgba(245, 158, 11, 0.1);"><td>&nbsp;&nbsp;&nbsp;&nbsp;↳ Офис продаж</td><td>30 млн</td><td>4 млн</td><td class="highlight">26 → 23 млн</td></tr>
+    </tbody>
+</table>
+
+С этим платежом по офису продаж будет <strong>7 млн факт</strong>.
+
+<span class="status-badge success">✔ Платёж в бюджете, превышения нет</span>
+
+Вносим в накопительную?`,
+                    voice: 'С этим платежом по офису продаж будет 7 миллионов факт. Платёж в бюджете, превышения нет. Вносим в накопительную?',
+                    buttons: ['✓ Да, вноси', 'Подробнее']
+                },
+                {
+                    type: 'user',
+                    text: 'Да, ок, давай'
+                },
+                {
+                    type: 'assistant',
+                    text: `<span class="status-badge success">✔ Готово!</span>
+
+Платёж <strong>3 000 000 ₽</strong> разнесён:
+• Проект: Касаткина
+• Очереди 1 и 2 (пропорционально)
+• Статья: Коммерческие → Маркетинг → Офис продаж
+
+Транзакция #1247 записана в накопительную ведомость.
+
+Ещё 2 документа ждут обработки. Продолжим?`,
+                    voice: 'Готово! Платёж 3 миллиона рублей разнесён на проект Касаткина. Транзакция записана в накопительную ведомость. Ещё 2 документа ждут обработки. Продолжим?',
+                    buttons: ['Да, следующий', 'На главную']
+                }
+            ],
+            analytics: [
+                {
+                    type: 'assistant',
+                    text: 'Добрый день, Катя! Чем могу помочь? Посмотреть аналитику, пересчитать сценарий?',
+                    voice: 'Добрый день, Катя! Чем могу помочь? Посмотреть аналитику, пересчитать сценарий?'
+                },
+                {
+                    type: 'user',
+                    text: 'Покажи мне по Тушино только 2 и 3 очередь. Основные показатели, ну ты знаешь, как я люблю табличку'
+                },
+                {
+                    type: 'assistant',
+                    text: `Да, конечно! Твоя любимая табличка по ФЭП 😊
+
+<div style="font-weight: 600; margin-bottom: 12px;">&#128202; Тушино — очереди 2 и 3</div>
+
+<table class="data-table">
+    <thead>
+        <tr><th>Показатель</th><th>Очередь 2</th><th>Очередь 3</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Продаваемая площадь</td><td>28 500 м²</td><td>34 200 м²</td></tr>
+        <tr><td>Выручка</td><td>5.7 млрд</td><td>6.8 млрд</td></tr>
+        <tr><td>Себестоимость</td><td>4.1 млрд</td><td>4.9 млрд</td></tr>
+        <tr><td>Валовая маржа</td><td class="highlight">1.6 млрд</td><td class="highlight">1.9 млрд</td></tr>
+        <tr><td>Маржинальность</td><td>28%</td><td>28%</td></tr>
+        <tr><td>IRR</td><td class="highlight">24%</td><td class="highlight">22%</td></tr>
+        <tr><td>NPV (15%)</td><td>890 млн</td><td>1.1 млрд</td></tr>
+    </tbody>
+</table>`,
+                    voice: 'Да, конечно! Твоя любимая табличка по ФЭП. По Тушино, очереди 2 и 3: маржинальность 28 процентов по обеим, IRR 24 и 22 процента соответственно.',
+                    buttons: ['&#128196; В PDF', 'Подробнее', 'Сценарий инвестора']
+                },
+                {
+                    type: 'user',
+                    text: 'Можешь в потоки по земле поставить строчку — покупка проекта сторонним инвестором. Поставь 2 млрд и посмотрим какие станут показатели'
+                },
+                {
+                    type: 'assistant',
+                    text: `Добавил строку "Покупка инвестором" — <strong>2 млрд ₽</strong>
+Пересчитал модель. Смотри результат:
+
+<table class="data-table">
+    <thead>
+        <tr><th>Показатель</th><th>Было</th><th>С инвестором</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>IRR проекта</td><td>24%</td><td class="positive">38%</td></tr>
+        <tr><td>NPV для продавца</td><td>1.9 млрд</td><td class="positive">3.4 млрд</td></tr>
+        <tr><td>IRR для покупателя</td><td>—</td><td class="highlight">24%</td></tr>
+        <tr><td>NPV для покупателя</td><td>—</td><td class="highlight">1.9 млрд</td></tr>
+    </tbody>
+</table>
+
+<div class="conclusion">
+    При продаже за <strong>2 млрд</strong> — для покупателя IRR <strong>24%</strong>, NPV <strong>1.9 млрд</strong>.
+    Сделка выгодна обеим сторонам.
+</div>`,
+                    voice: 'Добавил строку покупка инвестором 2 миллиарда рублей. Пересчитал модель. При продаже за 2 миллиарда — для покупателя IRR 24 процента, NPV 1.9 миллиарда. Сделка выгодна обеим сторонам.',
+                    buttons: ['&#128196; Сохранить в PDF', 'Кинуть в чат']
+                },
+                {
+                    type: 'user',
+                    text: 'Сохрани в PDF и кинь в чат'
+                },
+                {
+                    type: 'assistant',
+                    text: `<div class="success-block">
+    ✔ PDF сохранён: Тушино_инвестор_2млрд_21.01.2026.pdf
+</div>
+
+Готово! Отправил файл в общий чат проекта "Тушино".
+
+Что-то ещё посчитать?`,
+                    voice: 'Готово! PDF сохранён и отправлен в общий чат проекта Тушино. Что-то ещё посчитать?',
+                    buttons: ['Другой сценарий', 'На главную']
+                }
+            ],
+            covenants: [
+                {
+                    type: 'assistant',
+                    text: 'Привет, Катя! Есть новости по банковской отчётности — хочешь глянуть статус ковенантов?',
+                    voice: 'Привет, Катя! Есть новости по банковской отчётности — хочешь глянуть статус ковенантов?'
+                },
+                {
+                    type: 'user',
+                    text: 'Да, покажи по проспекту Мира какие сейчас ковенанты в красной или жёлтой зоне'
+                },
+                {
+                    type: 'assistant',
+                    text: `Катя, лови отчёт по ковенантам:
+
+<div style="font-weight: 600; margin-bottom: 12px;">&#127959; Проспект Мира — статус ковенантов</div>
+
+<table class="data-table">
+    <thead>
+        <tr><th>Ковенант</th><th>Банк</th><th>Факт</th><th>Δ</th><th style="text-align:center">Статус</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Цена продажи</td><td>550 т.р/м²</td><td>545 т.р/м²</td><td class="negative">−5</td><td style="text-align:center"><span class="status-yellow">&#128993;</span></td></tr>
+        <tr><td>Темп продаж</td><td>2.2 млрд</td><td>1.9 млрд</td><td class="negative">−0.3</td><td style="text-align:center"><span class="status-yellow">&#128993;</span></td></tr>
+        <tr><td>СМР выполнение</td><td>45%</td><td>47%</td><td class="positive">+2%</td><td style="text-align:center"><span class="status-green">&#128994;</span></td></tr>
+        <tr><td>Сроки ввода</td><td>4 кв 2027</td><td>4 кв 2027</td><td>0</td><td style="text-align:center"><span class="status-green">&#128994;</span></td></tr>
+    </tbody>
+</table>
+
+<div class="warning-block">
+    <strong>По ценам:</strong> банк ждёт 550 т.р., факт 545 т.р. В пределах допуска, но на грани.
+</div>
+
+<div class="warning-block">
+    <strong>По темпам:</strong> план 2.2 млрд на эскроу, прогноз 1.9 млрд. Отставание 14%.
+</div>`,
+                    voice: 'Катя, лови отчёт по ковенантам. По ценам: банк ждёт 550 тысяч рублей за метр, факт 545. В пределах допуска, но на грани. По темпам: план 2.2 миллиарда на эскроу, прогноз 1.9. Отставание 14 процентов, требует внимания.',
+                    buttons: ['Подробнее по ценам', 'Наполнение эскроу', 'История']
+                },
+                {
+                    type: 'user',
+                    text: 'А какое сейчас наполнение эскроу?'
+                },
+                {
+                    type: 'assistant',
+                    text: `Вот текущее состояние эскроу:
+
+<div style="font-weight: 600; margin-bottom: 12px;">&#128202; Эскроу по проспекту Мира</div>
+
+<table class="data-table">
+    <thead>
+        <tr><th>Показатель</th><th>Значение</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Остаток на эскроу</td><td>1.5 млрд</td></tr>
+        <tr><td>Выборка ПФ</td><td>2.1 млрд</td></tr>
+        <tr style="background: rgba(245, 158, 11, 0.1);"><td>Наполнение эскроу</td><td class="highlight">71%</td></tr>
+        <tr><td>Ковенант (мин.)</td><td>70%</td></tr>
+        <tr><td>Запас</td><td class="positive">+1%</td></tr>
+    </tbody>
+</table>
+
+<div class="success-block">
+    ✔ Наполнение <strong>71%</strong> — ковенант 70% соблюдается, но запас минимальный.
+</div>`,
+                    voice: 'Наполнение эскроу 71 процент — ковенант 70 процентов соблюдается, но запас минимальный. При падении продаж может потребоваться корректировка графика выборки проектного финансирования.',
+                    buttons: ['График эскроу', 'Прогноз', 'Отчёт в банк']
+                },
+                {
+                    type: 'user',
+                    text: 'Сформируй отчёт в банк'
+                },
+                {
+                    type: 'assistant',
+                    text: `Готово! Сформировал отчёт для банка:
+
+<div style="background: #252525; border-radius: 12px; padding: 16px; margin: 12px 0;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 24px;">&#128196;</span>
+        <div>
+            <div style="font-weight: 600;">Отчёт_Проспект_Мира_Q4_2025.pdf</div>
+            <div style="font-size: 12px; color: #888;">2.4 MB • Сформирован 21.01.2026</div>
+        </div>
+    </div>
+</div>
+
+Отправить на согласование CFO перед отправкой в банк?`,
+                    voice: 'Готово! Сформировал отчёт для банка: статус ковенантов, динамика эскроу за квартал, прогноз на следующий период. Отправить на согласование CFO перед отправкой в банк?',
+                    buttons: ['Отправить CFO', 'Скачать', 'На главную']
+                }
+            ],
+            comparison: [
+                {
+                    type: 'assistant',
+                    text: 'Катя, привет! Сегодня закрыли месяц по Проспекту Мира. Хочешь посмотреть, как мы сместились относительно входа в проект?',
+                    voice: 'Катя, привет! Сегодня закрыли месяц по Проспекту Мира. Хочешь посмотреть, как мы сместились относительно входа в проект?'
+                },
+                {
+                    type: 'user',
+                    text: 'Да, сравни вариант входа в проект и текущую модель по основным ФЭП'
+                },
+                {
+                    type: 'assistant',
+                    text: `Сравнение: <strong>вход в проект vs текущая модель</strong>
+
+<table class="data-table">
+    <thead>
+        <tr><th>Показатель</th><th>Вход</th><th>Текущая</th><th>Δ</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Цена продажи, т.р/м²</td><td>550</td><td>605</td><td class="positive">+55 +10%</td></tr>
+        <tr><td>СМР, т.р/м²</td><td>230</td><td>265</td><td class="negative">+35 +15%</td></tr>
+        <tr><td>Налоги + фин.расх.</td><td>48</td><td>60</td><td class="negative">+12 +25%</td></tr>
+        <tr><td>Маржа, т.р/м²</td><td>85</td><td>93</td><td class="positive">+8 +9%</td></tr>
+        <tr><td>Маржа, млн ₽</td><td>2 720</td><td>3 280</td><td class="positive">+560</td></tr>
+        <tr><td>IRR</td><td>22%</td><td>21%</td><td class="negative">−1%</td></tr>
+    </tbody>
+</table>
+
+<div class="conclusion">
+    <strong>Выводы:</strong> Цены выросли на 10%, СМР подорожал на 15%, но финрез лучше на 560 млн ₽. Маржинальность почти не изменилась.
+</div>`,
+                    voice: 'Сравнение входа в проект и текущей модели. Цены выросли на 10 процентов, СМР подорожал на 15 процентов, но финансовый результат лучше на 560 миллионов рублей. Маржинальность почти не изменилась.',
+                    buttons: ['&#128196; Скачать', 'Анализ ликвидности', 'Стресс-тест']
+                },
+                {
+                    type: 'user',
+                    text: 'Сделай стресс-тест — падение продаж на 30%'
+                },
+                {
+                    type: 'assistant',
+                    text: `Стресс-тест: падение темпов продаж на <strong>30%</strong>
+
+<table class="data-table">
+    <thead>
+        <tr><th>Показатель</th><th>Базовый</th><th>Стресс −30%</th><th>Δ</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Срок продаж</td><td>24 мес</td><td>34 мес</td><td class="negative">+10 мес</td></tr>
+        <tr><td>Доп. % по ПФ</td><td>—</td><td>180 млн</td><td class="negative">+180 млн</td></tr>
+        <tr><td>Чистая прибыль</td><td>3 280 млн</td><td>3 020 млн</td><td class="negative">−260 млн</td></tr>
+        <tr><td>IRR</td><td>21%</td><td>17%</td><td class="negative">−4%</td></tr>
+        <tr><td>Наполнение эскроу мин.</td><td>71%</td><td>58%</td><td class="negative">−13%</td></tr>
+    </tbody>
+</table>
+
+<div class="warning-block">
+    &#128308; <strong>Критично:</strong> Наполнение эскроу 58% при ковенанте 70%. Нарушение ковенанта через 2 квартала.
+</div>
+
+<div class="conclusion">
+    <strong>Рекомендации:</strong> Сформировать резерв 500 млн, пересмотреть график выборки ПФ с банком, подготовить план скидочных акций.
+</div>`,
+                    voice: 'Стресс-тест при падении продаж на 30 процентов. Критично: наполнение эскроу падает до 58 процентов при ковенанте 70. Нарушение ковенанта через 2 квартала. Рекомендации: сформировать резерв 500 миллионов, пересмотреть график выборки проектного финансирования с банком.',
+                    buttons: ['&#128196; Экспорт отчёта', 'Другой сценарий', 'На главную']
+                }
+            ]
+        };
+
+        // ============ CONVERSATION ENGINE ============
+        function startConversation() {
+            const conv = conversations[currentScenario];
+            if (!conv || conv.length === 0) return;
+
+            conversationStep = 0;
+            playNextMessage();
+        }
+
+        function playNextMessage() {
+            const conv = conversations[currentScenario];
+            if (conversationStep >= conv.length) return;
+
+            const msg = conv[conversationStep];
+
+            if (msg.type === 'user') {
+                addMessage(msg);
+                conversationStep++;
+                setTimeout(playNextMessage, 500);
+            } else {
+                showTyping();
+                setTimeout(() => {
+                    hideTyping();
+                    addMessage(msg);
+
+                    // Speak if enabled
+                    if (settings.voiceEnabled && settings.elevenLabsKey && msg.voice) {
+                        speak(msg.voice);
+                    }
+
+                    conversationStep++;
+                }, 1500);
+            }
+        }
+
+        function addMessage(msg) {
+            const div = document.createElement('div');
+            div.className = `message message-${msg.type}`;
+
+            let html = '';
+            if (msg.type === 'assistant') {
+                html = `
+                    <div class="avatar" id="avatar-${Date.now()}">&#129302;</div>
+                    <div class="message-content">
+                        <div class="message-text">${msg.text}</div>
+                        ${msg.buttons ? `
+                            <div class="action-buttons">
+                                ${msg.buttons.map(b => `
+                                    <button class="action-btn ${b.includes('✓') || b.includes('Сохранить') || b.includes('PDF') ? 'primary' : 'secondary'}"
+                                            onclick="handleAction('${b}')">${b}</button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            } else {
+                html = `
+                    <div class="message-content">
+                        <div class="message-text">${msg.text}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>`;
+            }
+
+            div.innerHTML = html;
+            document.getElementById('chatMessages').appendChild(div);
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message message-assistant';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+                <div class="avatar">&#129302;</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>`;
+            document.getElementById('chatMessages').appendChild(div);
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        function handleAction(action) {
+            if (action.includes('На главную')) {
+                goBack();
+                return;
+            }
+
+            // Continue conversation
+            if (conversationStep < conversations[currentScenario].length) {
+                playNextMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage({ type: 'user', text: text });
+            input.value = '';
+
+            // Continue to next assistant message
+            setTimeout(playNextMessage, 500);
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // ============ ELEVENLABS TTS ============
+        async function speak(text) {
+            if (!settings.elevenLabsKey || !settings.voiceEnabled) return;
+
+            try {
+                isSpeaking = true;
+                updateSpeakingState(true);
+
+                const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${settings.voiceId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'audio/mpeg',
+                        'Content-Type': 'application/json',
+                        'xi-api-key': settings.elevenLabsKey
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        model_id: 'eleven_multilingual_v2',
+                        voice_settings: {
+                            stability: 0.5,
+                            similarity_boost: 0.75
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('ElevenLabs API error:', response.status);
+                    isSpeaking = false;
+                    updateSpeakingState(false);
+                    return;
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                currentAudio = new Audio(audioUrl);
+                currentAudio.onended = () => {
+                    isSpeaking = false;
+                    updateSpeakingState(false);
+                    URL.revokeObjectURL(audioUrl);
+                };
+                currentAudio.onerror = () => {
+                    isSpeaking = false;
+                    updateSpeakingState(false);
+                };
+                currentAudio.play();
+
+            } catch (error) {
+                console.error('TTS error:', error);
+                isSpeaking = false;
+                updateSpeakingState(false);
+            }
+        }
+
+        // Dashboard voice functions
+        async function speakDashboard(text) {
+            if (!settings.elevenLabsKey || !settings.voiceEnabled) return;
+
+            const avatar = document.getElementById('dashAiAvatar');
+
+            try {
+                if (avatar) avatar.classList.add('speaking');
+
+                const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${settings.voiceId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'audio/mpeg',
+                        'Content-Type': 'application/json',
+                        'xi-api-key': settings.elevenLabsKey
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        model_id: 'eleven_multilingual_v2',
+                        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+                    })
+                });
+
+                if (!response.ok) {
+                    if (avatar) avatar.classList.remove('speaking');
+                    return;
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                currentAudio = new Audio(audioUrl);
+                currentAudio.onended = () => {
+                    if (avatar) avatar.classList.remove('speaking');
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                };
+                currentAudio.onerror = () => {
+                    if (avatar) avatar.classList.remove('speaking');
+                    currentAudio = null;
+                };
+                currentAudio.play();
+
+            } catch (error) {
+                if (avatar) avatar.classList.remove('speaking');
+            }
+        }
+
+        function toggleVoiceInDash() {
+            settings.voiceEnabled = !settings.voiceEnabled;
+            localStorage.setItem('voiceEnabled', settings.voiceEnabled);
+
+            const btn = document.getElementById('dashVoiceToggle');
+            btn.classList.toggle('muted', !settings.voiceEnabled);
+            btn.innerHTML = settings.voiceEnabled ? '&#128266;' : '&#128263;';
+
+            if (!settings.voiceEnabled) {
+                stopSpeaking();
+            }
+        }
+
+        function stopSpeaking() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            isSpeaking = false;
+            updateSpeakingState(false);
+        }
+
+        function updateSpeakingState(speaking) {
+            const avatars = document.querySelectorAll('.avatar');
+            avatars.forEach(a => a.classList.toggle('speaking', speaking));
+        }
+
+        function toggleVoiceInChat() {
+            settings.voiceEnabled = !settings.voiceEnabled;
+            localStorage.setItem('voiceEnabled', settings.voiceEnabled);
+
+            const btn = document.getElementById('voiceToggleBtn');
+            btn.classList.toggle('muted', !settings.voiceEnabled);
+            btn.innerHTML = settings.voiceEnabled ? '&#128266;' : '&#128263;';
+
+            if (!settings.voiceEnabled) {
+                stopSpeaking();
+            }
+        }
+    </script>
+</body>
+</html>
