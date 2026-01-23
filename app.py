@@ -763,11 +763,13 @@ elif page == "📋 Данные модели":
                             val = cell.final_value
                             if val is not None:
                                 if isinstance(val, float):
-                                    data[col_letter][cell.row_num - 1] = int(val) if val == int(val) else round(val, 2)
+                                    # Convert to string to avoid pyarrow mixed type error
+                                    formatted = int(val) if val == int(val) else round(val, 2)
+                                    data[col_letter][cell.row_num - 1] = str(formatted)
                                 else:
-                                    data[col_letter][cell.row_num - 1] = val
+                                    data[col_letter][cell.row_num - 1] = str(val)
 
-                    df = pd.DataFrame(data)
+                    df = pd.DataFrame(data, dtype=str)
                     df.index = range(1, len(df) + 1)
                     st.dataframe(df, use_container_width=True, height=550)
                     st.caption(f"Ячеек: {len(cells)}")
