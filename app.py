@@ -661,19 +661,51 @@ elif page == "📋 Данные модели":
     st.markdown("## Данные модели")
     st.caption("Просмотр данных по листам как в Excel")
 
-    # Sheet selector
-    sheets = ["DB2", "DB", "CF", "CF2", "TS1", "TS2", "RESUME", "DETAILS", "ПРОДАЖИ"]
-    selected = st.selectbox("Лист", sheets)
+    # All sheets as horizontal tabs (like Excel)
+    all_sheets = ["МАСТЕР ПЛАН", "RESUME", "DB", "DB1", "DB2", "CF", "CF1", "CF2", "TS1", "TS2", "DETAILS", "FACT", "БИТ", "ПРОДАЖИ", "СОЦИАЛКА"]
 
-    # Load raw sheet data
-    from db.queries import get_sheet_data
-    df = get_sheet_data(selected, version_id=1)
+    sheet_tabs = st.tabs(all_sheets)
 
-    if df is not None and not df.empty:
-        st.dataframe(df, use_container_width=True, height=600)
-        st.caption(f"Строк: {len(df)}")
-    else:
-        st.info("Нет данных")
+    for i, sheet_name in enumerate(all_sheets):
+        with sheet_tabs[i]:
+            # Load sheet data as grid
+            session = get_session()
+            try:
+                cells = session.query(CellValue).filter_by(
+                    version_id=1, sheet=sheet_name
+                ).all()
+
+                if cells:
+                    max_row = max((c.row_num for c in cells if c.row_num), default=0)
+                    max_col = max((c.col_num for c in cells if c.col_num), default=0)
+
+                    max_row = min(max_row, 100)
+                    max_col = min(max_col, 20)
+
+                    # Build grid
+                    columns = [num_to_col(j) for j in range(1, max_col + 1)]
+                    data = {col: [''] * max_row for col in columns}
+
+                    for cell in cells:
+                        if cell.row_num and cell.col_num and cell.row_num <= max_row and cell.col_num <= max_col:
+                            col_letter = num_to_col(cell.col_num)
+                            val = cell.final_value
+                            if val is not None:
+                                if isinstance(val, float):
+                                    data[col_letter][cell.row_num - 1] = int(val) if val == int(val) else round(val, 2)
+                                else:
+                                    data[col_letter][cell.row_num - 1] = val
+
+                    df = pd.DataFrame(data)
+                    df.index = range(1, len(df) + 1)
+                    st.dataframe(df, use_container_width=True, height=550)
+                    st.caption(f"Ячеек: {len(cells)}")
+                else:
+                    st.info(f"Нет данных для листа {sheet_name}")
+            except Exception as e:
+                st.error(f"Ошибка: {e}")
+            finally:
+                session.close()
 
 
 # ============================================
