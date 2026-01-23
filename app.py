@@ -542,11 +542,9 @@ python -m streamlit run app.py
 
 if page == "📊 Dashboard":
     st.markdown("## Финансовая модель — Касаткина 7")
-    st.caption("Обзор ключевых показателей проекта")
 
-    # KPI Row - using actual data structure
+    # KPI Row
     col1, col2, col3, col4, col5 = st.columns(5)
-
     with col1:
         st.metric("Выручка", "78.7 млрд", "")
     with col2:
@@ -558,88 +556,172 @@ if page == "📊 Dashboard":
     with col5:
         st.metric("IRR", "18%", "")
 
-    st.markdown("---")
+    # Section tabs - horizontal like Excel
+    section_tabs = st.tabs(["ТЭПы", "ИНВЕСТИЦИИ", "РАСХОДЫ", "ДОХОДЫ", "ФИНАНСИРОВАНИЕ", "СРОКИ", "РЕЗУЛЬТАТ", "ЗУ", "УПРАВЛЯЮЩИЙ"])
 
-    # Two column layout like Excel
-    left_col, right_col = st.columns(2)
+    # ТЭПы
+    with section_tabs[0]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>Параметр</th><th>ГНС</th><th>ОБЩАЯ ПЛОЩАДЬ</th><th>ПОЛЕЗНАЯ ПЛОЩАДЬ</th><th>LF, %</th><th>КОЛ-ВО</th></tr>
+            <tr><td><b>НАЗЕМНАЯ ЧАСТЬ</b></td><td>S лота</td><td>178 143</td><td>165 673</td><td>116 376</td><td>29,8%</td><td></td></tr>
+            <tr><td>КВАРТИРЫ</td><td style="background: #3d3d3d;">95%</td><td style="background: #3d3d3d;">53 м2</td><td>169 436</td><td>157 575</td><td>110 303</td><td>30,0%</td><td>2 081</td></tr>
+            <tr><td>РИТЕЙЛ</td><td style="background: #3d3d3d;">5%</td><td style="background: #3d3d3d;">100 м2</td><td>8 707</td><td>8 098</td><td>6 073</td><td>25,0%</td><td>61</td></tr>
+            <tr><td>ШКОЛА</td><td>мест</td><td style="background: #ffc107; color: #000;">1 000</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>ДОУ</td><td>мест</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td><b>ПОДЗЕМНАЯ ЧАСТЬ</b></td><td>S общ.</td><td>S пол.</td><td>44 480</td><td>16 680</td><td></td><td></td></tr>
+            <tr><td>ПАРКИНГ ЖИЛ.</td><td style="background: #3d3d3d;">обесп. 53%</td><td style="background: #ffc107; color: #000;">40 м2</td><td style="background: #3d3d3d;">15 м2</td><td>44 480</td><td>16 680</td><td></td><td>1 112</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>ПЛОЩАДИ</td><td></td><td>178 143</td><td>210 153</td><td>133 056</td><td>29,8%</td><td></td></tr>
+        </table>
+        """, unsafe_allow_html=True)
 
-    with left_col:
-        # ТЭПы
-        st.markdown('<div class="section-header">ТЭПы</div>', unsafe_allow_html=True)
-        tep_data = [
-            ["НАЗЕМНАЯ ЧАСТЬ", "178 143", "165 673", "116 376", "29.8%"],
-            ["КВАРТИРЫ", "169 436", "157 575", "110 303", "30.0%"],
-            ["РИТЕЙЛ", "8 707", "8 098", "6 073", "25.0%"],
-            ["ШКОЛА", "мест", "1 000", "", ""],
-            ["ДОУ", "мест", "", "", ""],
-            ["ПОДЗЕМНАЯ ЧАСТЬ", "", "44 480", "16 680", ""],
-            ["ПАРКИНГ", "44 480", "44 480", "16 680", ""],
-            ["ПЛОЩАДИ", "178 143", "210 153", "133 056", "29.8%"],
-        ]
-        df_tep = pd.DataFrame(tep_data, columns=["Показатель", "ГНС", "Общ.площ.", "Полезн.площ.", "LF%"])
-        st.dataframe(df_tep, use_container_width=True, hide_index=True, height=320)
+    # ИНВЕСТИЦИИ
+    with section_tabs[1]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>Ставка</th><th>Ед.</th><th>руб./S общ.</th><th>руб./S пол.</th><th>млн.руб.</th></tr>
+            <tr><td><b>ВХОД</b></td><td style="background: #ffc107; color: #000;">807</td><td>за Га</td><td>18 279</td><td>28 870</td><td style="background: #7c4dff; color: #fff;">3 841</td></tr>
+            <tr><td>FINDERS FEE</td><td></td><td>% от входа</td><td></td><td></td><td></td></tr>
+            <tr><td><b>ЗЕМЕЛЬНО-ПРАВОВЫЕ ВОПРОСЫ</b></td><td></td><td></td><td>23 436</td><td>37 016</td><td style="background: #7c4dff; color: #fff;">4 925</td></tr>
+            <tr><td>ВРИ</td><td></td><td></td><td>40 248</td><td>63 570</td><td>8 458</td></tr>
+            <tr><td>ЛЬГОТА</td><td></td><td></td><td>-40 248</td><td>-63 570</td><td style="color: #f44336;">-8 458</td></tr>
+            <tr><td>ПОКУПКА ЛЬГОТЫ</td><td></td><td></td><td>22 314</td><td>35 243</td><td>4 689</td></tr>
+            <tr><td>РАССРОЧКА ВРИ</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>АРЕНДА ЗУ/НАЛОГ ЗУ</td><td></td><td>АРЕНДА</td><td>1 123</td><td>1 773</td><td>236</td></tr>
+            <tr><td><b>ВЛОЖЕНИЯ В СТРОИТЕЛЬСТВО</b></td><td></td><td></td><td>185 503</td><td>292 990</td><td>38 984</td></tr>
+            <tr><td>ПРОЕКТИРОВАНИЕ (К+П+РД)</td><td style="background: #ffc107; color: #000;">7 310</td><td>м2 S общ.</td><td>7 310</td><td>11 546</td><td>1 536</td></tr>
+            <tr><td>СОГЛАСОВАНИЯ</td><td style="background: #ffc107; color: #000;">1 000</td><td>м2 S общ.</td><td>1 000</td><td>1 579</td><td>210</td></tr>
+            <tr><td>СМР жилье</td><td style="background: #ffc107; color: #000;">137 000</td><td>м2 S общ.</td><td>137 000</td><td>216 382</td><td>28 791</td></tr>
+            <tr><td>СМР соц. объектов</td><td style="background: #ffc107; color: #000;">20 791</td><td>м2 Sобщ.</td><td>20 791</td><td>32 838</td><td>4 369</td></tr>
+            <tr><td>СОДЕРЖАНИЕ ПЛОЩАДКИ</td><td style="background: #ffc107; color: #000;">770</td><td>м2 S общ.</td><td>770</td><td>1 216</td><td>162</td></tr>
+            <tr><td>СЕТИ</td><td style="background: #ffc107; color: #000;">5 500</td><td>м2 Sобщ.</td><td>5 500</td><td>8 687</td><td style="background: #ffc107; color: #000;">1 156</td></tr>
+            <tr><td>МОНИТОРИНГИ</td><td style="background: #ffc107; color: #000;">2 500</td><td>м2 Sобщ.</td><td>2 500</td><td>3 949</td><td>525</td></tr>
+            <tr><td>УПРАВЛЕНИЕ ПРОЕКТОМ</td><td>20,8 млн. в мес.</td><td style="background: #ffc107; color: #000;">4,00%</td><td>% от расходов</td><td>7 135</td><td>11 269</td><td>1 499</td></tr>
+            <tr><td>НЕПРЕДВИДЕННЫЕ РАСХОДЫ</td><td></td><td style="background: #ffc107; color: #000;">2,00%</td><td>% от расходов</td><td>3 497</td><td>5 524</td><td>735</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>ИНВЕСТИЦИИ</td><td></td><td></td><td>227 219</td><td>358 876</td><td style="color: #f44336;">47 751</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
 
-        # ИНВЕСТИЦИИ
-        st.markdown('<div class="section-header">ИНВЕСТИЦИИ</div>', unsafe_allow_html=True)
-        inv_data = [
-            ["ВХОД", "807", "18 279", "28 870", "3 841"],
-            ["ЗЕМЕЛЬНО-ПРАВОВЫЕ", "", "23 436", "37 016", "4 925"],
-            ["ВРИ", "", "40 248", "63 570", "8 458"],
-            ["ЛЬГОТА", "", "-40 248", "-63 570", "-8 458"],
-            ["ПОКУПКА ЛЬГОТЫ", "", "22 314", "35 243", "4 689"],
-            ["ВЛОЖЕНИЯ В СМР", "", "185 503", "292 990", "38 984"],
-            ["ПРОЕКТИРОВАНИЕ", "7 310", "7 310", "11 546", "1 536"],
-            ["СМР жилье", "137 000", "137 000", "216 382", "28 791"],
-            ["СЕТИ", "5 500", "5 500", "8 687", "1 156"],
-            ["ИНВЕСТИЦИИ итого", "", "227 219", "358 876", "47 751"],
-        ]
-        df_inv = pd.DataFrame(inv_data, columns=["Показатель", "Ставка", "руб/S общ", "руб/S пол", "млн.руб"])
-        st.dataframe(df_inv, use_container_width=True, hide_index=True, height=380)
+    # РАСХОДЫ НА ПРОДАЖУ
+    with section_tabs[2]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>Ставка</th><th>Ед.</th><th>руб./S общ.</th><th>руб./S пол.</th><th>млн.руб.</th></tr>
+            <tr><td>АХР</td><td style="background: #ffc107; color: #000;">2,0</td><td>млн. р. в кв.</td><td>757</td><td>1 195</td><td>159</td></tr>
+            <tr><td>РЕКЛАМА И МАРКЕТИНГ</td><td style="background: #ffc107; color: #000;">3,0%</td><td>% от выручки</td><td>11 241</td><td>17 755</td><td>2 362</td></tr>
+            <tr><td>БРОКЕРИДЖ</td><td style="background: #ffc107; color: #000;">3,0%</td><td>% от выручки</td><td>11 241</td><td>17 755</td><td>2 362</td></tr>
+            <tr><td>УПРАВЛЕНИЕ ПРОДАЖАМИ</td><td style="background: #ffc107; color: #000;">1,2%</td><td>% от выручки</td><td>4 496</td><td>7 102</td><td>945</td></tr>
+            <tr><td>РЕГИСТРАЦИЯ ДОГОВОРОВ</td><td style="background: #ffc107; color: #000;">30 000</td><td>руб./лот</td><td>657</td><td>1 038</td><td>138</td></tr>
+            <tr><td>АРЕНДА / НАЛОГ ЗУ</td><td></td><td></td><td>155</td><td>245</td><td>33</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>РАСХОДЫ</td><td></td><td></td><td>28 548</td><td>45 089</td><td style="color: #4caf50;">5 999</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
 
-    with right_col:
-        # ДОХОДЫ
-        st.markdown('<div class="section-header">ДОХОДЫ</div>', unsafe_allow_html=True)
-        rev_data = [
-            ["НАЗЕМНАЯ ЧАСТЬ", "511", "", ""],
-            ["КВАРТИРЫ", "523", "630", "69 491"],
-            ["РИТЕЙЛ", "700", "700", "4 251"],
-            ["ПАРКИНГ ЖИЛЬЕ", "4 500", "4 500", "5 004"],
-            ["ДОХОДЫ итого", "", "", "78 746"],
-        ]
-        df_rev = pd.DataFrame(rev_data, columns=["Показатель", "Цена→", "Ср.цена", "Доход, млн"])
-        st.dataframe(df_rev, use_container_width=True, hide_index=True, height=220)
+    # ДОХОДЫ
+    with section_tabs[3]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>старт</th><th>% пост.</th><th>c/c</th><th>ЦЕНА →</th><th>ЦЕНА ←</th><th>СРЕДНЯЯ ЦЕНА</th><th>ДОХОД, млн.руб.</th><th>%</th><th>ОБЪЕМ ПРОДАЖ, в кв.</th></tr>
+            <tr><td><b>НАЗЕМНАЯ ЧАСТЬ</b></td><td></td><td></td><td></td><td>511</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>КВАРТИРЫ</td><td style="background: #ffc107; color: #000;">01.10.2026</td><td style="background: #3d3d3d;">36%</td><td></td><td>523</td><td>711</td><td style="background: #ffc107; color: #000;">630</td><td style="font-weight: bold;">69 491</td><td>88%</td><td>4 596</td></tr>
+            <tr><td>РИТЕЙЛ</td><td>1 кв после РнВ</td><td></td><td></td><td>700</td><td>700</td><td style="background: #ffc107; color: #000;">700</td><td>4 251</td><td>5%</td><td></td></tr>
+            <tr><td>ШКОЛА</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>ДОУ</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td><b>ПОДЗЕМНАЯ ЧАСТЬ</b></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>ПАРКИНГ ЖИЛЬЕ</td><td></td><td style="background: #ffc107; color: #000;">70%</td><td></td><td>4 500</td><td>4 500</td><td style="background: #ffc107; color: #000;">4 500</td><td style="font-weight: bold;">5 004</td><td>6%</td><td></td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>ДОХОДЫ</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="color: #4caf50;">78 746</td><td></td><td></td></tr>
+        </table>
+        """, unsafe_allow_html=True)
 
-        # СРОКИ
-        st.markdown('<div class="section-header">СРОКИ</div>', unsafe_allow_html=True)
-        time_data = [
-            ["НАЧАЛО РАСЧЕТОВ", "01.04.2023"],
-            ["НАЧАЛО ПРОЕКТА", "01.04.2025"],
-            ["СРОК ИРД", "5 кв."],
-            ["РНС 1", "01.10.2026"],
-            ["СРОК СМР", "16 кв."],
-            ["РНВ 2", "30.09.2030"],
-            ["ОКОНЧАНИЕ ПРОДАЖ", "31.12.2031"],
-            ["СРОК проекта", "6.8 лет"],
-        ]
-        df_time = pd.DataFrame(time_data, columns=["Показатель", "Значение"])
-        st.dataframe(df_time, use_container_width=True, hide_index=True, height=320)
+    # ФИНАНСИРОВАНИЕ
+    with section_tabs[4]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>Параметр</th><th>Значение</th></tr>
+            <tr><td colspan="3" style="background: #2d2d2d;"><b>КРЕДИТ</b></td></tr>
+            <tr><td>СТАВКИ</td><td></td><td>КС = 20,0%</td></tr>
+            <tr><td>СТАВКА бридж</td><td style="background: #ffc107; color: #000;">+ 5,0%</td><td>25,0%</td></tr>
+            <tr><td>СТАВКА проектное фин-ие</td><td style="background: #ffc107; color: #000;">+ 3,8%</td><td>23,8%</td></tr>
+            <tr><td>СТАВКА под эскроу</td><td></td><td>3,8%</td></tr>
+            <tr><td colspan="3" style="background: #2d2d2d;"><b>КОМИССИИ</b></td></tr>
+            <tr><td>РЕЗЕРВИРОВАНИЕ в банке</td><td>303 млн. руб.</td><td style="background: #ffc107; color: #000;">0,50%</td></tr>
+            <tr><td>БРОКЕРИДЖ МРГ бридж</td><td></td><td></td></tr>
+            <tr><td>БРОКЕРИДЖ МРГ проектное</td><td></td><td></td></tr>
+            <tr><td colspan="3" style="background: #2d2d2d;"><b>ОБЪЕМ ФИНАНСИРОВАНИЯ</b></td></tr>
+            <tr><td>ВХОД</td><td>млн. руб.</td><td></td></tr>
+            <tr><td>ДО РНС</td><td>млн. руб.</td><td>9 723</td></tr>
+            <tr><td>ПРОЕКТНОЕ ФИН-ИЕ</td><td>млн. руб.</td><td>50 956</td></tr>
+            <tr><td>% и КОМИСИИ банка</td><td>млн. руб.</td><td>10 380</td></tr>
+            <tr><td colspan="3" style="background: #2d2d2d;"><b>АКЦИОНЕРНЫЕ ЗАЙМЫ</b></td></tr>
+            <tr><td>СТАВКА ЗАЙМА</td><td style="background: #ffc107; color: #000;">+ 1,0%</td><td>21,0%</td></tr>
+            <tr><td>ТЕЛО ЗАЙМА</td><td>млн. руб.</td><td>596</td></tr>
+            <tr><td>%</td><td>млн. руб.</td><td>392</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>ПРОЦЕНТЫ</td><td></td><td style="color: #f44336;">10 772</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
 
-        # РЕЗУЛЬТАТ
-        st.markdown('<div class="section-header">РЕЗУЛЬТАТ</div>', unsafe_allow_html=True)
-        res_data = [
-            ["ДОХОДЫ", "78 746"],
-            ["РАСХОДЫ НА ПРОДАЖУ", "-5 999"],
-            ["ИНВЕСТИЦИИ", "-47 751"],
-            ["ПРОЦЕНТЫ", "-10 772"],
-            ["НАЛОГИ", "-4 878"],
-            ["ПРИБЫЛЬ", "9 346"],
-            ["МАРЖА до Н/О", "18%"],
-            ["МАРЖА после Н/О", "12%"],
-            ["IRR проекта", "18%"],
-            ["IRR инвестора", "63%"],
-        ]
-        df_res = pd.DataFrame(res_data, columns=["Показатель", "млн.руб"])
-        st.dataframe(df_res, use_container_width=True, hide_index=True, height=380)
+    # СРОКИ
+    with section_tabs[5]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #7c4dff;"><th>Показатель</th><th>кв.</th></tr>
+            <tr><td>НАЧАЛО РАСЧЕТОВ</td><td style="font-weight: bold;">01.04.2023</td></tr>
+            <tr><td>НАЧАЛО ПРОЕКТА</td><td style="font-weight: bold;">01.04.2025</td></tr>
+            <tr><td>СРОК ИРД</td><td>5 кв.</td></tr>
+            <tr><td>РНС 1</td><td style="font-weight: bold;">01.10.2026</td></tr>
+            <tr><td>СРОК СМР</td><td>16 кв.</td></tr>
+            <tr><td>РНВ 2</td><td style="font-weight: bold;">30.09.2030</td></tr>
+            <tr><td>ОКОНЧАНИЕ ПРОДАЖ</td><td style="font-weight: bold;">31.12.2031</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>СРОК</td><td>6,8 л</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
+
+    # РЕЗУЛЬТАТ
+    with section_tabs[6]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>млн. руб.</th></tr>
+            <tr><td>ДОХОДЫ</td><td>78 746</td></tr>
+            <tr><td>РАСХОДЫ НА ПРОДАЖУ</td><td style="color: #f44336;">-5 999</td></tr>
+            <tr><td>ИНВЕСТИЦИИ</td><td style="color: #f44336;">-47 751</td></tr>
+            <tr><td>ПРОЦЕНТЫ</td><td style="color: #f44336;">-10 772</td></tr>
+            <tr><td>НАЛОГИ</td><td style="color: #f44336;">-4 878</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td>ПРИБЫЛЬ (в т ч SF МРГ)</td><td style="color: #4caf50;">9 346</td></tr>
+            <tr><td>МАРЖИНАЛЬНОСТЬ до Н/О</td><td>18%</td></tr>
+            <tr><td>МАРЖ-СТЬ после Н/О</td><td>12%</td></tr>
+            <tr><td>IRR ПРОЕКТА (pre-tax)</td><td style="font-weight: bold;">18%</td></tr>
+            <tr><td>IRR ИНВЕСТОРА</td><td style="font-weight: bold;">63%</td></tr>
+            <tr><td>LLSR</td><td>1,20</td></tr>
+            <tr><td>PV</td><td style="background: #3d3d3d;">20%</td><td>1866</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
+
+    # ЗУ
+    with section_tabs[7]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #7c4dff;"><th colspan="3">ЗУ</th></tr>
+            <tr><td>КАДАСТРОВЫЙ НОМЕР</td><td></td><td style="font-weight: bold;">77:02:0019010:102</td></tr>
+            <tr><td>ВИД ПРАВА</td><td></td><td>АРЕНДА</td></tr>
+            <tr><td>АРЕНДА / НАЛОГ ЗУ после ввода</td><td>кв.</td><td>2</td></tr>
+            <tr><td>ПЛОЩАДЬ ЗУ</td><td>м2</td><td style="font-weight: bold;">47 620</td></tr>
+            <tr><td>УДЕЛЬНАЯ ТЕКУЩАЯ КС</td><td>тыс. руб.</td><td>21 593</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
+
+    # ДОХОДЫ УПРАВЛЯЮЩЕГО
+    with section_tabs[8]:
+        st.markdown("""
+        <table class="data-table">
+            <tr style="background: #1e4976;"><th>Показатель</th><th>Ставка</th><th>млн. руб.</th></tr>
+            <tr><td>УПРАВЛЕНИЕ ПРОЕКТОМ</td><td></td><td>1 499</td></tr>
+            <tr><td>УПРАВЛЕНИЕ ПРОДАЖАМИ</td><td></td><td>945</td></tr>
+            <tr><td>ПРИВЛЕЧЕНИЕ КРЕДИТА</td><td></td><td></td></tr>
+            <tr><td>FINDERS FEE</td><td></td><td></td></tr>
+            <tr><td>SF</td><td style="background: #ffc107; color: #000;">5,0%</td><td>467</td></tr>
+            <tr style="background: #1a1a1a; font-weight: bold;"><td></td><td></td><td style="color: #4caf50;">2 912</td></tr>
+        </table>
+        """, unsafe_allow_html=True)
 
 
 # ============================================
