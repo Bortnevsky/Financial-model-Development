@@ -581,6 +581,155 @@ def get_sheet_summary(sheet_name: str) -> str:
         session.close()
 
 
+def get_cell_dependencies(cell_address: str) -> str:
+    """Get cell formula and its dependencies (for AI tool use)"""
+    import re
+    session = get_session()
+    try:
+        # Parse address: "CF!B15" or "B15"
+        if '!' in cell_address:
+            sheet, addr = cell_address.split('!', 1)
+            sheet = sheet.strip("'")
+        else:
+            sheet = "RESUME"
+            addr = cell_address
+
+        addr = addr.replace('$', '').upper()
+
+        # Find the cell
+        cell = session.query(CellValue).filter_by(
+            version_id=1, sheet=sheet, address=addr
+        ).first()
+
+        if not cell:
+            return f"Ячейка {sheet}!{addr} не найдена"
+
+        result = [f"Ячейка: {sheet}!{addr}"]
+        result.append(f"Значение: {cell.final_value}")
+
+        if cell.formula:
+            result.append(f"Формула: {cell.formula}")
+
+            # Parse formula to find references
+            # Pattern for cell references like A1, $A$1, 'Sheet'!A1
+            ref_pattern = r"(?:'([^']+)'!)?(\$?[A-Z]+\$?\d+)"
+            refs = re.findall(ref_pattern, cell.formula)
+
+            if refs:
+                result.append("Зависит от:")
+                for ref_sheet, ref_addr in refs[:10]:  # Limit to 10
+                    ref_sheet = ref_sheet or sheet
+                    ref_addr = ref_addr.replace('$', '')
+                    ref_cell = session.query(CellValue).filter_by(
+                        version_id=1, sheet=ref_sheet, address=ref_addr
+                    ).first()
+                    val = ref_cell.final_value if ref_cell else "N/A"
+                    result.append(f"  - {ref_sheet}!{ref_addr} = {val}")
+        else:
+            result.append("Формулы нет (вводимое значение)")
+
+        # Find cells that depend on this cell (reverse dependencies)
+        pattern = f"%{addr}%"
+        dependents = session.query(CellValue).filter(
+            CellValue.version_id == 1,
+            CellValue.formula.like(pattern)
+        ).limit(10).all()
+
+        if dependents:
+            result.append(f"От этой ячейки зависят ({len(dependents)}+):")
+            for dep in dependents[:5]:
+                result.append(f"  - {dep.sheet}!{dep.address}: {dep.formula[:50]}...")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Ошибка: {e}"
+    finally:
+        session.close()
+
+
+def analyze_indicator_impact(indicator_name: str) -> str:
+    """Analyze what affects an indicator and what it affects"""
+    import re
+    session = get_session()
+    try:
+        # Find indicator
+        ind = session.query(Indicator).filter(
+            Indicator.name.ilike(f"%{indicator_name}%")
+        ).first()
+
+        if not ind:
+            return f"Показатель '{indicator_name}' не найден"
+
+        result = [f"Показатель: {ind.name}"]
+        result.append(f"Лист: {ind.sheet}, строка: {ind.row_num}")
+        result.append(f"Секция: {ind.section or 'N/A'}")
+        result.append(f"Тип: {ind.indicator_type or 'N/A'}")
+
+        # Get all cells in this row
+        cells = session.query(CellValue).filter_by(
+            version_id=1, sheet=ind.sheet, row_num=ind.row_num
+        ).order_by(CellValue.col_num).all()
+
+        # Analyze formulas
+        inputs = set()
+        for cell in cells:
+            if cell.formula:
+                ref_pattern = r"(?:'([^']+)'!)?(\$?[A-Z]+\$?\d+)"
+                refs = re.findall(ref_pattern, cell.formula)
+                for ref_sheet, ref_addr in refs:
+                    ref_sheet = ref_sheet or ind.sheet
+                    inputs.add(f"{ref_sheet}!{ref_addr.replace('$', '')}")
+
+        if inputs:
+            result.append(f"\nВходные данные (влияют на {ind.name}):")
+            for inp in list(inputs)[:15]:
+                # Try to find indicator name for this cell
+                parts = inp.split('!')
+                if len(parts) == 2:
+                    inp_sheet, inp_addr = parts
+                    match = re.match(r'[A-Z]+(\d+)', inp_addr)
+                    if match:
+                        row = int(match.group(1))
+                        inp_ind = session.query(Indicator).filter_by(
+                            sheet=inp_sheet, row_num=row
+                        ).first()
+                        if inp_ind:
+                            result.append(f"  - {inp} ({inp_ind.name})")
+                        else:
+                            result.append(f"  - {inp}")
+
+        # Find what depends on this indicator
+        dependents = []
+        for cell in cells:
+            pattern = f"%{cell.address}%"
+            deps = session.query(CellValue).filter(
+                CellValue.version_id == 1,
+                CellValue.formula.like(pattern)
+            ).limit(5).all()
+            dependents.extend(deps)
+
+        if dependents:
+            result.append(f"\nВлияет на:")
+            seen = set()
+            for dep in dependents[:10]:
+                dep_ind = session.query(Indicator).filter_by(
+                    sheet=dep.sheet, row_num=dep.row_num
+                ).first()
+                key = f"{dep.sheet}!row{dep.row_num}"
+                if key not in seen:
+                    seen.add(key)
+                    if dep_ind:
+                        result.append(f"  - {dep_ind.name} ({dep.sheet})")
+                    else:
+                        result.append(f"  - {dep.sheet}!{dep.address}")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Ошибка: {e}"
+    finally:
+        session.close()
+
+
 # AI Tools definition for Claude
 AI_TOOLS = [
     {
@@ -610,6 +759,34 @@ AI_TOOLS = [
             },
             "required": ["sheet_name"]
         }
+    },
+    {
+        "name": "get_cell_dependencies",
+        "description": "Получить формулу ячейки и её зависимости. Показывает от каких ячеек зависит и на что влияет. Используй для анализа связей в модели.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "cell_address": {
+                    "type": "string",
+                    "description": "Адрес ячейки в формате 'ЛИСТ!АДРЕС' или просто 'АДРЕС'. Примеры: 'CF!B15', 'DB2!C8', 'AA5'"
+                }
+            },
+            "required": ["cell_address"]
+        }
+    },
+    {
+        "name": "analyze_impact",
+        "description": "Анализ влияния показателя: что на него влияет и на что он влияет. Используй для ответов о зависимостях и чувствительности.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "indicator_name": {
+                    "type": "string",
+                    "description": "Название показателя для анализа влияния (например: 'СМР', 'КВАРТИРЫ', 'ПАРКИНГ')"
+                }
+            },
+            "required": ["indicator_name"]
+        }
     }
 ]
 
@@ -620,6 +797,10 @@ def process_tool_call(tool_name: str, tool_input: dict) -> str:
         return search_indicator_value(tool_input.get("query", ""))
     elif tool_name == "get_sheet":
         return get_sheet_summary(tool_input.get("sheet_name", ""))
+    elif tool_name == "get_cell_dependencies":
+        return get_cell_dependencies(tool_input.get("cell_address", ""))
+    elif tool_name == "analyze_impact":
+        return analyze_indicator_impact(tool_input.get("indicator_name", ""))
     return "Неизвестный инструмент"
 
 
