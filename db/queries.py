@@ -379,17 +379,253 @@ def search_cells(
         session.close()
 
 
+# ============================================
+# Override Functions
+# ============================================
+
+def set_override(
+    sheet: str,
+    address: str,
+    value: float,
+    reason: str = None,
+    version_id: int = 1,
+    db_path: str = 'fm_demo.db'
+) -> bool:
+    """
+    Set an override value for a cell.
+
+    Args:
+        sheet: Sheet name
+        address: Cell address
+        value: New override value
+        reason: Reason for override (for audit log)
+        version_id: Version ID
+        db_path: Database path
+
+    Returns:
+        True if successful
+    """
+    from db.schema import CellEvent
+
+    engine = get_engine(db_path)
+    session = get_session(engine)
+
+    try:
+        cell = session.query(CellValue).filter_by(
+            version_id=version_id,
+            sheet=sheet,
+            address=address.upper()
+        ).first()
+
+        if not cell:
+            return False
+
+        # Store old value for audit
+        old_value = cell.override_value if cell.override_value is not None else cell.calc_value
+
+        # Set override
+        cell.override_value = value
+
+        # Log event
+        event = CellEvent(
+            cell_id=cell.id,
+            event_type='override',
+            old_value=old_value,
+            new_value=value,
+            reason=reason
+        )
+        session.add(event)
+        session.commit()
+
+        return True
+
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def clear_override(
+    sheet: str,
+    address: str,
+    reason: str = None,
+    version_id: int = 1,
+    db_path: str = 'fm_demo.db'
+) -> bool:
+    """
+    Clear override value, return to calculated value.
+
+    Args:
+        sheet: Sheet name
+        address: Cell address
+        reason: Reason for clearing
+        version_id: Version ID
+        db_path: Database path
+
+    Returns:
+        True if successful
+    """
+    from db.schema import CellEvent
+
+    engine = get_engine(db_path)
+    session = get_session(engine)
+
+    try:
+        cell = session.query(CellValue).filter_by(
+            version_id=version_id,
+            sheet=sheet,
+            address=address.upper()
+        ).first()
+
+        if not cell:
+            return False
+
+        if cell.override_value is None:
+            return True  # Already no override
+
+        old_value = cell.override_value
+
+        # Clear override
+        cell.override_value = None
+
+        # Log event
+        event = CellEvent(
+            cell_id=cell.id,
+            event_type='clear_override',
+            old_value=old_value,
+            new_value=cell.calc_value,
+            reason=reason
+        )
+        session.add(event)
+        session.commit()
+
+        return True
+
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def get_overrides(
+    version_id: int = 1,
+    sheet: str = None,
+    db_path: str = 'fm_demo.db'
+) -> List[Dict]:
+    """
+    Get all cells with override values.
+
+    Args:
+        version_id: Version ID
+        sheet: Optional sheet filter
+        db_path: Database path
+
+    Returns:
+        List of cells with overrides
+    """
+    engine = get_engine(db_path)
+    session = get_session(engine)
+
+    try:
+        query = session.query(CellValue).filter(
+            CellValue.version_id == version_id,
+            CellValue.override_value.isnot(None)
+        )
+
+        if sheet:
+            query = query.filter(CellValue.sheet == sheet)
+
+        cells = query.order_by(CellValue.sheet, CellValue.row_num, CellValue.col_num).all()
+
+        return [
+            {
+                'sheet': c.sheet,
+                'address': c.address,
+                'calc_value': c.calc_value,
+                'override_value': c.override_value,
+                'final_value': c.final_value,
+            }
+            for c in cells
+        ]
+
+    finally:
+        session.close()
+
+
+def get_cell_history(
+    sheet: str,
+    address: str,
+    version_id: int = 1,
+    db_path: str = 'fm_demo.db',
+    limit: int = 50
+) -> List[Dict]:
+    """
+    Get change history for a cell.
+
+    Args:
+        sheet: Sheet name
+        address: Cell address
+        version_id: Version ID
+        db_path: Database path
+        limit: Max events to return
+
+    Returns:
+        List of events
+    """
+    from db.schema import CellEvent
+
+    engine = get_engine(db_path)
+    session = get_session(engine)
+
+    try:
+        cell = session.query(CellValue).filter_by(
+            version_id=version_id,
+            sheet=sheet,
+            address=address.upper()
+        ).first()
+
+        if not cell:
+            return []
+
+        events = session.query(CellEvent).filter_by(
+            cell_id=cell.id
+        ).order_by(CellEvent.created_at.desc()).limit(limit).all()
+
+        return [
+            {
+                'event_type': e.event_type,
+                'old_value': e.old_value,
+                'new_value': e.new_value,
+                'reason': e.reason,
+                'created_at': e.created_at.isoformat() if e.created_at else None,
+            }
+            for e in events
+        ]
+
+    finally:
+        session.close()
+
+
 # CLI for testing
 if __name__ == '__main__':
     import sys
 
     if len(sys.argv) < 3:
-        print("Usage: python queries.py <sheet> <address>")
+        print("Usage: python queries.py <sheet> <address> [override_value]")
         print("Example: python queries.py DB2 U36")
+        print("Example: python queries.py CF2 P87 999.99")
         sys.exit(1)
 
     sheet = sys.argv[1]
     address = sys.argv[2]
+
+    # If override value provided, set it
+    if len(sys.argv) >= 4:
+        override_val = float(sys.argv[3])
+        success = set_override(sheet, address, override_val, reason='CLI test')
+        print(f"Override set: {success}")
 
     cell = get_cell(sheet, address)
     if cell:
@@ -397,8 +633,8 @@ if __name__ == '__main__':
         print(f"Label: {cell.get('label', 'N/A')}")
         print(f"Formula: {cell.get('formula', 'N/A')}")
         print(f"Calc value: {cell.get('calc_value', 'N/A')}")
+        print(f"Override: {cell.get('override_value', 'N/A')}")
         print(f"Final value: {cell.get('final_value', 'N/A')}")
         print(f"Status: {cell.get('value_status', 'N/A')}")
-        print(f"Format: {cell.get('number_format', 'N/A')}")
     else:
         print(f"Cell not found: {sheet}!{address}")
