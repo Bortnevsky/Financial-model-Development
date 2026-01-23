@@ -791,17 +791,38 @@ elif page == "💬 AI Ассистент":
     with st.expander("⚙️ Настройки API", expanded=False):
         col1, col2 = st.columns(2)
         with col1:
-            api_key = st.text_input("Claude API Key", type="password", placeholder="sk-ant-...")
+            api_key = st.text_input("Claude API Key", type="password", placeholder="sk-ant-...", key="claude_api_key")
         with col2:
-            model = st.selectbox("Модель", ["claude-sonnet-4-5-20250929", "claude-opus-4-5-20251101"])
+            model = st.selectbox("Модель", [
+                "claude-sonnet-4-5-20250929",
+                "claude-opus-4-5-20251101",
+                "claude-3-5-sonnet-20241022",
+                "claude-3-5-haiku-20241022"
+            ], key="claude_model")
 
         col3, col4 = st.columns(2)
         with col3:
-            eleven_key = st.text_input("11Labs API Key", type="password", placeholder="...")
+            eleven_key = st.text_input("11Labs API Key", type="password", placeholder="...", key="eleven_key")
         with col4:
-            voice = st.selectbox("Голос", ["Rachel", "Adam", "Antoni"])
+            voice = st.selectbox("Голос", ["Rachel", "Adam", "Antoni"], key="eleven_voice")
 
     st.markdown("---")
+
+    # Model context for AI
+    model_context = """
+    Финансовая модель проекта "Касаткина 7":
+    - Выручка: 78 746 млн руб (КВАРТИРЫ 69 491, РИТЕЙЛ 4 251, ПАРКИНГ 5 004)
+    - Инвестиции: 47 751 млн руб
+    - Расходы на продажу: 5 999 млн руб
+    - Проценты: 10 772 млн руб
+    - Налоги: 4 878 млн руб
+    - Прибыль: 9 346 млн руб
+    - Маржа до Н/О: 18%, после Н/О: 12%
+    - IRR проекта: 18%, IRR инвестора: 63%
+    - Площади: ГНС 178 143 м², общая 210 153 м², полезная 133 056 м²
+    - Сроки: начало 01.04.2025, РНС 01.10.2026, РНВ 30.09.2030, окончание продаж 31.12.2031 (6.8 лет)
+    - Ключевая ставка: 20%, ставка бридж: 25%, проектное: 23.8%
+    """
 
     # Chat
     if "messages" not in st.session_state:
@@ -819,22 +840,54 @@ elif page == "💬 AI Ассистент":
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         if st.button("📊 Показатели", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": "Покажи основные показатели"})
+            st.session_state.pending_question = "Покажи основные показатели проекта"
     with col2:
         if st.button("💰 Прибыль", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": "Какая прибыль проекта?"})
+            st.session_state.pending_question = "Какая прибыль проекта и из чего она складывается?"
     with col3:
         if st.button("⚠️ Риски", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": "Какие риски у проекта?"})
+            st.session_state.pending_question = "Какие риски у проекта?"
     with col4:
         if st.button("📈 IRR", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": "Объясни IRR проекта"})
+            st.session_state.pending_question = "Объясни IRR проекта и инвестора"
 
     # Input
     user_input = st.chat_input("Ваш вопрос...")
+
+    # Handle pending question from buttons
+    if "pending_question" in st.session_state:
+        user_input = st.session_state.pending_question
+        del st.session_state.pending_question
+
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
-        st.session_state.messages.append({"role": "assistant", "content": "Для работы AI нужен API ключ Claude. Введите его в настройках выше."})
+
+        if api_key:
+            try:
+                import anthropic
+                client = anthropic.Anthropic(api_key=api_key)
+
+                # Build messages for API
+                api_messages = []
+                for msg in st.session_state.messages:
+                    if msg["role"] in ["user", "assistant"]:
+                        api_messages.append({"role": msg["role"], "content": msg["content"]})
+
+                with st.spinner("Думаю..."):
+                    response = client.messages.create(
+                        model=model,
+                        max_tokens=1024,
+                        system=f"Ты финансовый аналитик. Отвечай на русском языке. Вот данные модели:\n{model_context}",
+                        messages=api_messages
+                    )
+                    answer = response.content[0].text
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+
+            except Exception as e:
+                st.session_state.messages.append({"role": "assistant", "content": f"Ошибка API: {str(e)}"})
+        else:
+            st.session_state.messages.append({"role": "assistant", "content": "Введите API ключ Claude в настройках выше."})
+
         st.rerun()
 
 
