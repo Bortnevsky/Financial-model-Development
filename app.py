@@ -295,6 +295,87 @@ def load_sheet_data(sheet_name: str, version_id: int = 1):
         session.close()
 
 
+def load_indicators(sheet_name: str):
+    """Load indicators (row labels) for a sheet"""
+    from sqlalchemy import text
+    session = get_session()
+    try:
+        result = session.execute(text(
+            "SELECT row_num, name, section FROM indicators WHERE sheet = :sheet ORDER BY row_num"
+        ), {"sheet": sheet_name})
+        rows = result.fetchall()
+        return {r[0]: {"name": r[1], "section": r[2]} for r in rows}
+    except:
+        return {}
+    finally:
+        session.close()
+
+
+def load_model_with_labels(sheet_name: str, version_id: int = 1):
+    """Load sheet data with row labels from indicators"""
+    session = get_session()
+    try:
+        # Get indicators for labels
+        indicators = load_indicators(sheet_name)
+
+        # Get cell values
+        cells = session.query(CellValue).filter_by(
+            version_id=version_id,
+            sheet=sheet_name
+        ).all()
+
+        if not cells:
+            return pd.DataFrame()
+
+        max_row = max((c.row_num for c in cells if c.row_num), default=0)
+        max_col = max((c.col_num for c in cells if c.col_num), default=0)
+
+        # Limit columns (skip first few label columns, focus on data)
+        col_start = 3  # Start from column C
+        max_col = min(max_col, 25)  # Limit to Y
+
+        # Build data
+        rows_data = []
+        for row_num in range(1, max_row + 1):
+            row_dict = {"Строка": row_num}
+
+            # Add label from indicators
+            if row_num in indicators:
+                row_dict["Показатель"] = indicators[row_num]["name"]
+                row_dict["Раздел"] = indicators[row_num]["section"] or ""
+            else:
+                row_dict["Показатель"] = ""
+                row_dict["Раздел"] = ""
+
+            rows_data.append(row_dict)
+
+        # Add cell values
+        for cell in cells:
+            if cell.row_num and cell.col_num and cell.row_num <= max_row:
+                if cell.col_num >= col_start and cell.col_num <= max_col:
+                    col_name = num_to_col(cell.col_num)
+                    val = cell.final_value
+                    if val is not None:
+                        if isinstance(val, float):
+                            if val == int(val):
+                                rows_data[cell.row_num - 1][col_name] = int(val)
+                            else:
+                                rows_data[cell.row_num - 1][col_name] = round(val, 2)
+                        else:
+                            rows_data[cell.row_num - 1][col_name] = val
+
+        df = pd.DataFrame(rows_data)
+        # Remove empty rows (no indicator and no values)
+        df = df[df.apply(lambda x: x["Показатель"] != "" or any(x[3:] != ""), axis=1)]
+        return df
+
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return pd.DataFrame()
+    finally:
+        session.close()
+
+
 # ============================================
 # SIDEBAR - Always visible menu
 # ============================================
@@ -366,47 +447,49 @@ if not db_ok:
 if page == "📊 Dashboard":
     st.markdown("## 📊 Финансовая модель — Касаткина 7")
 
-    # Load DB sheet data (main dashboard view like Excel)
-    df = load_sheet_data("DB")
+    # Sheet selector for main view
+    all_sheets = ["DB", "DB2", "CF", "CF2", "TS1", "TS2", "RESUME", "DETAILS", "ПРОДАЖИ"]
+    selected_main_sheet = st.selectbox("Выберите лист", all_sheets, index=1, key="main_sheet")
+
+    # Load data with labels
+    df = load_model_with_labels(selected_main_sheet)
 
     if not df.empty:
-        # Section tabs for Excel-like navigation
-        tabs = st.tabs(["ТЭП", "ДОХОДЫ", "ИНВЕСТИЦИИ", "ФИНАНСИРОВАНИЕ", "СРОКИ", "РЕЗУЛЬТАТ", "Вся модель"])
+        # Get unique sections from data
+        indicators = load_indicators(selected_main_sheet)
+        sections_list = list(set(ind["section"] for ind in indicators.values() if ind["section"]))
+        sections_list = [s for s in sections_list if s]  # Remove empty
 
-        # Section row ranges (approximate, based on typical FM structure)
-        sections = {
-            "ТЭП": (1, 35),
-            "ДОХОДЫ": (36, 90),
-            "ИНВЕСТИЦИИ": (91, 150),
-            "ФИНАНСИРОВАНИЕ": (151, 200),
-            "СРОКИ": (201, 230),
-            "РЕЗУЛЬТАТ": (231, 280)
-        }
+        if sections_list:
+            # Create tabs from actual sections
+            tab_names = sections_list + ["Вся модель"]
+            tabs = st.tabs(tab_names)
 
-        for i, (section_name, (row_start, row_end)) in enumerate(sections.items()):
-            with tabs[i]:
-                st.markdown(f"### {section_name}")
-                df_section = df.iloc[max(0, row_start-1):min(len(df), row_end)]
-                if not df_section.empty:
-                    st.dataframe(df_section, use_container_width=True, height=500)
-                else:
-                    st.info("Нет данных для этого раздела")
+            for i, section_name in enumerate(sections_list):
+                with tabs[i]:
+                    st.markdown(f"### {section_name}")
+                    if "Раздел" in df.columns:
+                        df_section = df[df["Раздел"] == section_name]
+                        if not df_section.empty:
+                            st.dataframe(df_section, use_container_width=True, height=500)
+                        else:
+                            st.info("Нет данных для этого раздела")
+                    else:
+                        st.info("Нет данных для этого раздела")
 
-        # Full model view
-        with tabs[-1]:
-            st.markdown("### Вся модель")
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                row_from = st.number_input("Строки с", min_value=1, value=1, key="dash_row_from")
-            with col2:
-                row_to = st.number_input("по", min_value=1, value=100, key="dash_row_to")
-
-            df_view = df.iloc[int(row_from)-1:int(row_to)]
-            st.dataframe(df_view, use_container_width=True, height=600)
-            st.caption(f"Показано строк: {len(df_view)} из {len(df)}")
+            # Full model view
+            with tabs[-1]:
+                st.markdown("### Вся модель")
+                st.dataframe(df, use_container_width=True, height=600)
+                st.caption(f"Всего строк: {len(df)}")
+        else:
+            # No sections - show all data
+            st.markdown("### Все данные")
+            st.dataframe(df, use_container_width=True, height=600)
+            st.caption(f"Всего строк: {len(df)}")
 
     else:
-        st.warning("Нет данных для листа DB. Проверьте базу данных.")
+        st.warning(f"Нет данных для листа {selected_main_sheet}. Проверьте базу данных.")
 
 
 elif page == "📋 Таблицы модели":
